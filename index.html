@@ -1138,7 +1138,7 @@ async function loadTrips() {
   showLoading(true);
   try {
     const params = buildDateParams();
-    const url = `${API}/trips?${params}&limit=5000`;
+    const url = `${API}/trips?${params}`;
     const res = await fetch(url);
     const data = await res.json();
     allTrips = Array.isArray(data) ? data : (data.trips || []);
