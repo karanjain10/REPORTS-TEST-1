@@ -1,0 +1,3510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LISPL — Trip Reports</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --border: #e2e0d8;
+    --border-strong: #c8c5bb;
+    --text-primary: #1a1917;
+    --text-secondary: #6b6860;
+    --text-muted: #9b9890;
+    --accent: #1a3a5c;
+    --accent-light: #e8eef5;
+    --coal: #2d2d2d;
+    --softob: #e8a020;
+    --hardob: #c0392b;
+    --rehandling: #2980b9;
+    --shift-a: #27ae60;
+    --shift-b: #8e44ad;
+    --shift-c: #e67e22;
+    --sidebar-w: 220px;
+    --font-main: 'DM Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-main);
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+  }
+
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 48px 40px;
+    width: 380px;
+  }
+
+  .login-logo {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .login-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 32px;
+    line-height: 1.3;
+  }
+
+  .login-field {
+    margin-bottom: 16px;
+  }
+
+  .login-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  .login-field input {
+    width: 100%;
+    height: 42px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 0 12px;
+    font-family: var(--font-main);
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .login-field input:focus { border-color: var(--accent); }
+
+  .login-btn {
+    width: 100%;
+    height: 42px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-main);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.15s;
+  }
+
+  .login-btn:hover { opacity: 0.88; }
+  .login-error { color: #c0392b; font-size: 13px; margin-top: 12px; text-align: center; min-height: 20px; }
+
+  /* APP SHELL */
+  #app { display: none; min-height: 100vh; }
+
+  .topbar {
+    height: 56px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-logo {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-right: 8px;
+  }
+
+  .topbar-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    flex: 1;
+  }
+
+  .topbar-user {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .topbar-logout {
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .topbar-logout:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+  .main-layout {
+    display: flex;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .filter-section { margin-bottom: 24px; }
+
+  .filter-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .filter-chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .filter-chip {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-secondary);
+    background: transparent;
+    user-select: none;
+  }
+
+  .filter-chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .filter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .chip-coal.active { background: var(--coal); border-color: var(--coal); }
+  .chip-softob.active { background: var(--softob); border-color: var(--softob); }
+  .chip-hardob.active { background: var(--hardob); border-color: var(--hardob); }
+  .chip-rehandling.active { background: var(--rehandling); border-color: var(--rehandling); }
+  .chip-shift-a.active { background: var(--shift-a); border-color: var(--shift-a); }
+  .chip-shift-b.active { background: var(--shift-b); border-color: var(--shift-b); }
+  .chip-shift-c.active { background: var(--shift-c); border-color: var(--shift-c); }
+
+  .sidebar-search {
+    width: 100%;
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0 10px;
+    font-size: 13px;
+    font-family: var(--font-main);
+    color: var(--text-primary);
+    background: var(--bg);
+    outline: none;
+    margin-bottom: 8px;
+  }
+  .sidebar-search:focus { border-color: var(--border-strong); }
+
+  .sidebar-list { max-height: 160px; overflow-y: auto; }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 4px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 5px;
+    color: var(--text-secondary);
+    user-select: none;
+    transition: background 0.1s;
+  }
+  .sidebar-item:hover { background: var(--bg); color: var(--text-primary); }
+
+  .sidebar-item input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+
+  .sidebar-clear {
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-decoration: underline;
+    margin-top: 6px;
+    display: inline-block;
+  }
+  .sidebar-clear:hover { color: var(--text-secondary); }
+
+  /* CONTENT */
+  .content { flex: 1; padding: 24px; overflow: hidden; }
+
+  /* DATE ROW */
+  .date-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .date-btn {
+    height: 34px;
+    padding: 0 16px;
+    border-radius: 7px;
+    border: 1.5px solid var(--border);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-secondary);
+    background: var(--surface);
+    font-family: var(--font-main);
+  }
+  .date-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .date-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .date-custom-row {
+    display: none;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .date-custom-row.visible { display: flex; }
+
+  .date-input {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 13px;
+    font-family: var(--font-main);
+    color: var(--text-primary);
+    background: var(--surface);
+    outline: none;
+  }
+  .date-input:focus { border-color: var(--accent); }
+
+  .apply-btn {
+    height: 34px;
+    padding: 0 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-main);
+  }
+
+  /* STAT CARDS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .stat-total .stat-value { color: var(--accent); }
+  .stat-coal .stat-value { color: var(--coal); }
+  .stat-softob .stat-value { color: var(--softob); }
+  .stat-hardob .stat-value { color: var(--hardob); }
+  .stat-rehandling .stat-value { color: var(--rehandling); }
+
+  /* ACTION BAR */
+  .action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .result-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .result-count strong { color: var(--text-primary); }
+
+  .action-btns { display: flex; gap: 8px; }
+
+  .action-btn {
+    height: 34px;
+    padding: 0 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-secondary);
+    background: var(--surface);
+    font-family: var(--font-main);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .action-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .action-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .action-btn.primary:hover { opacity: 0.88; }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .table-scroll { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead tr {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--text-primary); }
+
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg); }
+
+  tbody td {
+    padding: 10px 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  .td-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .mat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .mat-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  .mat-coal { background: #f0f0f0; color: #2d2d2d; }
+  .mat-coal .mat-dot { background: var(--coal); }
+  .mat-softob { background: #fef6e7; color: #7a5000; }
+  .mat-softob .mat-dot { background: var(--softob); }
+  .mat-hardob { background: #fdecea; color: #8b1a1a; }
+  .mat-hardob .mat-dot { background: var(--hardob); }
+  .mat-rehandling { background: #e8f4fb; color: #1a4a6b; }
+  .mat-rehandling .mat-dot { background: var(--rehandling); }
+
+  .shift-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+
+  .shift-A { background: #eafaf1; color: #1e8449; }
+  .shift-B { background: #f5eef8; color: #6c3483; }
+  .shift-C { background: #fef5e7; color: #935116; }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state svg { margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 14px; }
+
+  /* PAGINATION */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .page-btns { display: flex; gap: 4px; }
+
+  .page-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-family: var(--font-main);
+    transition: all 0.1s;
+  }
+  .page-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* LOADING */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(245, 244, 240, 0.7);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  .loading-overlay.visible { display: flex; }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--accent);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* EXPORT DROPDOWN */
+  .export-wrap { position: relative; }
+  .export-menu {
+    display: none;
+    position: absolute;
+    top: 38px;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    z-index: 200;
+    min-width: 150px;
+    overflow: hidden;
+  }
+  .export-menu.open { display: block; }
+  .export-menu-item {
+    padding: 10px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .export-menu-item:hover { background: var(--bg); }
+
+  /* MOBILE OVERLAY & TOGGLE */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 150;
+  }
+  .sidebar-overlay.open { display: block; }
+
+  .filter-toggle {
+    display: none;
+    height: 34px;
+    padding: 0 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-secondary);
+    background: var(--surface);
+    font-family: var(--font-main);
+    align-items: center;
+    gap: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .sidebar { width: 180px; }
+  }
+
+  @media (max-width: 640px) {
+    /* LOGIN */
+    .login-box {
+      width: 92vw;
+      padding: 36px 24px;
+    }
+
+    /* TOPBAR */
+    .topbar { padding: 0 14px; gap: 10px; }
+    .topbar-logo { display: none; }
+    .topbar-title { font-size: 14px; }
+    .topbar-user { font-size: 12px; gap: 6px; }
+    .topbar-logout { padding: 3px 8px; font-size: 11px; }
+
+    /* SIDEBAR — slides in as drawer */
+    .sidebar {
+      position: fixed;
+      left: -260px;
+      top: 56px;
+      width: 260px !important;
+      height: calc(100vh - 56px);
+      z-index: 200;
+      transition: left 0.25s ease;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.12);
+      overflow-y: auto;
+    }
+    .sidebar.open { left: 0; }
+
+    /* FILTER TOGGLE BUTTON */
+    .filter-toggle { display: flex; }
+
+    /* CONTENT */
+    .content { padding: 14px; }
+
+    /* DATE ROW */
+    .date-row { gap: 6px; }
+    .date-btn { height: 30px; padding: 0 10px; font-size: 12px; }
+
+    /* STATS */
+    .stats-row {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .stat-card { padding: 10px 12px; }
+    .stat-value { font-size: 22px; }
+    .stat-label { font-size: 10px; }
+
+    /* ACTION BAR */
+    .action-bar { gap: 8px; }
+    .result-count { font-size: 12px; }
+
+    /* TABLE */
+    .table-wrap { border-radius: 8px; }
+    tbody td { padding: 8px 10px; font-size: 12px; }
+    thead th { padding: 8px 10px; font-size: 10px; }
+
+    /* PAGINATION */
+    .pagination { padding: 10px 12px; font-size: 12px; }
+    .page-btn { width: 26px; height: 26px; font-size: 12px; }
+  }
+
+  /* ── DASHBOARD GRID ─────────────────────────────────────────── */
+  .dash-section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 8px; margin-top: 4px;
+  }
+  .dash-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .dash-grid-mat {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .dash-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 12px 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    position: relative;
+    user-select: none;
+  }
+  .dash-btn:hover { border-color: var(--border-strong); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .dash-btn.active { box-shadow: 0 0 0 2px var(--accent); border-color: var(--accent); background: var(--accent-light); }
+  .dash-btn-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 6px;
+  }
+  .dash-btn-count {
+    font-family: var(--font-mono); font-size: 26px;
+    font-weight: 500; line-height: 1; color: var(--accent);
+  }
+  .dash-btn.shift-a .dash-btn-label { color: var(--shift-a); }
+  .dash-btn.shift-a .dash-btn-count { color: var(--shift-a); }
+  .dash-btn.shift-b .dash-btn-label { color: var(--shift-b); }
+  .dash-btn.shift-b .dash-btn-count { color: var(--shift-b); }
+  .dash-btn.shift-c .dash-btn-label { color: var(--shift-c); }
+  .dash-btn.shift-c .dash-btn-count { color: var(--shift-c); }
+  .dash-btn.mat-coal-btn .dash-btn-count { color: var(--coal); }
+  .dash-btn.mat-softob-btn .dash-btn-count { color: var(--softob); }
+  .dash-btn.mat-hardob-btn .dash-btn-count { color: var(--hardob); }
+  .dash-btn.mat-rehandling-btn .dash-btn-count { color: var(--rehandling); }
+  .dash-alert-dot {
+    position: absolute; top: 8px; right: 10px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #e74c3c; display: none;
+  }
+  .dash-btn.has-alert .dash-alert-dot { display: block; }
+
+  /* ── DETAIL PANEL ────────────────────────────────────────────── */
+  .detail-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    display: none;
+  }
+  .detail-panel.visible { display: block; }
+  .detail-header {
+    padding: 14px 18px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .detail-title {
+    font-size: 14px; font-weight: 600; color: var(--accent);
+  }
+  .detail-close {
+    font-size: 18px; cursor: pointer; color: var(--text-muted);
+    line-height: 1; padding: 2px 6px; border-radius: 4px;
+    transition: background 0.1s;
+  }
+  .detail-close:hover { background: var(--border); color: var(--text-primary); }
+  .detail-body { padding: 16px 18px; }
+  .detail-kpi-row {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .detail-kpi {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; min-width: 100px;
+  }
+  .detail-kpi-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 4px;
+  }
+  .detail-kpi-val {
+    font-family: var(--font-mono); font-size: 20px;
+    font-weight: 500; color: var(--accent);
+  }
+  .detail-alert {
+    background: #fff5f5; border: 1px solid #f5c6c6;
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;
+    font-size: 13px; color: #8b1a1a; display: flex; align-items: flex-start; gap: 8px;
+  }
+  .detail-alert-icon { font-size: 15px; margin-top: 1px; flex-shrink: 0; }
+  .detail-sub-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.09em; color: var(--text-muted); margin: 14px 0 8px;
+  }
+  .detail-mat-row {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .detail-mat-chip {
+    padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .detail-shift-block {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 10px; overflow: hidden;
+  }
+  .detail-shift-header {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: 600; font-size: 13px;
+  }
+  .detail-shift-body { padding: 12px 14px; }
+  .detail-shift-kpis { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .detail-shift-kpi {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 12px; font-size: 12px;
+  }
+  .detail-shift-kpi strong { font-family: var(--font-mono); font-size: 14px; color: var(--accent); }
+
+  /* clickable driver count */
+  .drivers-link {
+    cursor: pointer; text-decoration: underline dotted;
+    color: var(--accent); transition: opacity 0.15s;
+  }
+  .drivers-link:hover { opacity: 0.75; }
+
+  /* ── DRIVER LIST MODAL ───────────────────────────────────────── */
+  #driver-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); z-index: 8000;
+    align-items: center; justify-content: center;
+  }
+  #driver-modal.open { display: flex; }
+  .driver-modal-box {
+    background: var(--surface); border-radius: 12px;
+    width: 540px; max-width: 95vw; max-height: 80vh;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  }
+  .driver-modal-header {
+    padding: 18px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg);
+  }
+  .driver-modal-title { font-size: 14px; font-weight: 700; color: var(--accent); }
+  .driver-modal-close {
+    font-size: 20px; cursor: pointer; color: var(--text-muted);
+    padding: 2px 6px; border-radius: 4px; line-height: 1;
+  }
+  .driver-modal-close:hover { background: var(--border); color: var(--text-primary); }
+  .driver-modal-body { overflow-y: auto; flex: 1; }
+  .driver-row {
+    display: flex; align-items: center; padding: 11px 20px;
+    border-bottom: 1px solid var(--border); font-size: 13px;
+    gap: 12px;
+  }
+  .driver-row:last-child { border-bottom: none; }
+  .driver-row:hover { background: var(--bg); }
+  .driver-row-num {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--text-muted); width: 20px; flex-shrink: 0;
+  }
+  .driver-row-name { flex: 1; font-weight: 500; }
+  .driver-row-trips {
+    font-family: var(--font-mono); font-size: 13px;
+    font-weight: 600; color: var(--accent); min-width: 40px; text-align: right;
+  }
+  .driver-row-time {
+    font-size: 11px; color: var(--text-muted);
+    min-width: 90px; text-align: right;
+  }
+
+  /* ── TRUCK LIST MODAL (same structure as driver modal) ────────── */
+  #truck-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); z-index: 8000;
+    align-items: center; justify-content: center;
+  }
+  #truck-modal.open { display: flex; }
+
+  /* ── CUTOFF PAGE ─────────────────────────────────────────────── */
+  #cutoff-page { display: none; min-height: 100vh; background: var(--bg); }
+  .cutoff-config {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .cutoff-config label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+  .cutoff-input {
+    width: 70px; height: 34px; border: 1.5px solid var(--border-strong);
+    border-radius: 7px; padding: 0 10px; font-size: 14px; font-weight: 600;
+    font-family: var(--font-mono); color: var(--accent); text-align: center;
+    outline: none; background: var(--bg);
+  }
+  .cutoff-input:focus { border-color: var(--accent); }
+  .cutoff-tag {
+    font-size: 12px; color: var(--text-muted);
+    background: var(--bg); border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 20px;
+  }
+  .cutoff-table-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .cutoff-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .cutoff-table thead tr { background: var(--bg); border-bottom: 1px solid var(--border); }
+  .cutoff-table thead th {
+    padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .cutoff-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .cutoff-table tbody tr:last-child { border-bottom: none; }
+  .cutoff-table tbody tr:hover { background: var(--bg); }
+  .cutoff-table tbody td { padding: 10px 14px; }
+  .cutoff-ok { color: #27ae60; font-weight: 600; font-size: 12px; }
+  .cutoff-warn { color: #c0392b; font-weight: 600; font-size: 12px; }
+  .cutoff-filter-row {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center;
+  }
+  .cutoff-summary-chips {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .cutoff-chip {
+    padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1.5px solid transparent;
+  }
+  .cutoff-chip-warn { background: #fdecea; color: #8b1a1a; border-color: #f5c6c6; }
+  .cutoff-chip-ok { background: #eafaf1; color: #1e8449; border-color: #a9dfbf; }
+  .cutoff-chip-total { background: var(--accent-light); color: var(--accent); border-color: var(--border); }
+
+  /* ── CUTOFF CONFIG GRID ──────────────────────────────────────── */
+  .cutoff-grid-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 20px; margin-bottom: 16px;
+  }
+  .cutoff-grid-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 12px;
+  }
+  .cutoff-set-all {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .cutoff-set-all label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+  .cutoff-grid-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .cutoff-grid-table th {
+    padding: 6px 10px; text-align: center; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .cutoff-grid-table th:first-child { text-align: left; }
+  .cutoff-grid-table td {
+    padding: 6px 10px; border: 1px solid var(--border); text-align: center;
+  }
+  .cutoff-grid-table td:first-child {
+    font-weight: 600; font-size: 12px; background: var(--bg);
+    text-align: left; white-space: nowrap;
+  }
+  .cutoff-cell-input {
+    width: 56px; height: 30px; border: 1.5px solid var(--border-strong);
+    border-radius: 6px; padding: 0 6px; font-size: 13px; font-weight: 600;
+    font-family: var(--font-mono); color: var(--accent); text-align: center;
+    outline: none; background: var(--surface);
+  }
+  .cutoff-cell-input:focus { border-color: var(--accent); }
+
+  /* ── RAW DATA DRILL MODAL ────────────────────────────────────── */
+  #drill-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 9000;
+    align-items: flex-start; justify-content: center;
+    padding-top: 40px;
+  }
+  #drill-modal.open { display: flex; }
+  .drill-modal-box {
+    background: var(--surface); border-radius: 12px;
+    width: 92vw; max-width: 1100px; max-height: 82vh;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+  }
+  .drill-modal-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--accent); color: #fff; flex-shrink: 0;
+  }
+  .drill-modal-title { font-size: 14px; font-weight: 700; }
+  .drill-modal-meta { font-size: 12px; opacity: 0.8; }
+  .drill-modal-close {
+    font-size: 22px; cursor: pointer; opacity: 0.8; padding: 0 4px; line-height: 1;
+  }
+  .drill-modal-close:hover { opacity: 1; }
+  .drill-modal-body { overflow-y: auto; flex: 1; }
+  .drill-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .drill-table thead tr { background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+  .drill-table thead th {
+    padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); white-space: nowrap;
+  }
+  .drill-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .drill-table tbody tr:last-child { border-bottom: none; }
+  .drill-table tbody tr:hover { background: var(--bg); }
+  .drill-table tbody td { padding: 9px 12px; white-space: nowrap; }
+
+  /* clickable name/truck link - used throughout */
+  .entity-link {
+    cursor: pointer; color: var(--accent);
+    text-decoration: underline dotted; text-underline-offset: 2px;
+    transition: opacity 0.15s;
+  }
+  .entity-link:hover { opacity: 0.7; }
+
+  /* ── RAW DATA TABLE (hidden by default) ─────────────────────── */
+  #raw-data-section { display: none; margin-top: 20px; }
+  #raw-data-section.visible { display: block; }
+
+  @media (max-width: 760px) {
+    .dash-grid { grid-template-columns: repeat(3,1fr); }
+    .dash-grid-mat { grid-template-columns: repeat(2,1fr); }
+    .dash-btn-count { font-size: 20px; }
+    .detail-kpi-row { gap: 8px; }
+  }
+
+  /* SUMMARY REPORT HIERARCHY */
+  .hier-col {
+    min-width: 200px;
+    max-width: 220px;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    max-height: 420px;
+    flex-shrink: 0;
+  }
+  .hier-col:last-child { border-right: none; flex: 1; min-width: 160px; }
+  .hier-col-header {
+    padding: 10px 14px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+  }
+  .hier-item {
+    padding: 10px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.1s;
+    color: var(--text-primary);
+    user-select: none;
+  }
+  .hier-item:last-child { border-bottom: none; }
+  .hier-item:hover { background: var(--accent-light); }
+  .hier-item.selected { background: var(--accent); color: #fff; }
+  .hier-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--bg);
+    padding: 2px 7px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .hier-item.selected .hier-count { background: rgba(255,255,255,0.2); color: #fff; }
+
+  /* LEADERBOARD */
+  .lb-row {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-rank { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); width: 18px; flex-shrink: 0; }
+  .lb-name { flex: 1; font-weight: 500; color: var(--text-primary); font-size: 12px; }
+  .lb-count { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--accent); }
+  .lb-row.bottom .lb-count { color: var(--hardob); }
+
+  @media (max-width: 640px) {
+    #sr-leaderboards { grid-template-columns: 1fr !important; }
+    .hier-col { min-width: 140px; }
+    #sr-hierarchy { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">LISPL</div>
+    <div class="login-title">Trip Reports<br>Dashboard</div>
+    <div class="login-field">
+      <label>Worker ID</label>
+      <input type="text" id="login-id" placeholder="Enter your worker ID" autocomplete="off" />
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter your password" />
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">KM</div>
+    <div class="topbar-title">Trip Reports</div>
+    <div class="topbar-user">
+      <span id="topbar-username"></span>
+      <button class="action-btn" onclick="openCutoffPage()" style="height:30px;font-size:12px;">⏱ Cutoff Check</button>
+      <span class="topbar-logout" onclick="doLogout()">Sign out</span>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- MOBILE SIDEBAR OVERLAY -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <!-- SHIFT -->
+      <div class="filter-section">
+        <div class="filter-label">Shift</div>
+        <div class="filter-chip-group">
+          <div class="filter-chip chip-shift-a" data-type="shift" data-val="A">Shift A</div>
+          <div class="filter-chip chip-shift-b" data-type="shift" data-val="B">Shift B</div>
+          <div class="filter-chip chip-shift-c" data-type="shift" data-val="C">Shift C</div>
+        </div>
+      </div>
+
+      <!-- MATERIAL -->
+      <div class="filter-section">
+        <div class="filter-label">Material</div>
+        <div class="filter-chip-group">
+          <div class="filter-chip chip-coal" data-type="material" data-val="Coal">Coal</div>
+          <div class="filter-chip chip-softob" data-type="material" data-val="Soft OB">Soft OB</div>
+          <div class="filter-chip chip-hardob" data-type="material" data-val="Hard OB">Hard OB</div>
+          <div class="filter-chip chip-rehandling" data-type="material" data-val="Rehandling">Rehandling</div>
+        </div>
+      </div>
+
+      <!-- VEHICLE -->
+      <div class="filter-section">
+        <div class="filter-label">Vehicle</div>
+        <input class="sidebar-search" type="text" id="vehicle-search" placeholder="Search..." oninput="filterSidebarList('vehicle')" />
+        <div class="sidebar-list" id="vehicle-list"></div>
+        <span class="sidebar-clear" onclick="clearListFilter('vehicle')">Clear</span>
+      </div>
+
+      <!-- DRIVER -->
+      <div class="filter-section">
+        <div class="filter-label">Driver</div>
+        <input class="sidebar-search" type="text" id="driver-search" placeholder="Search..." oninput="filterSidebarList('driver')" />
+        <div class="sidebar-list" id="driver-list"></div>
+        <span class="sidebar-clear" onclick="clearListFilter('driver')">Clear</span>
+      </div>
+
+      <!-- SUPERVISOR -->
+      <div class="filter-section">
+        <div class="filter-label">Supervisor</div>
+        <input class="sidebar-search" type="text" id="supervisor-search" placeholder="Search..." oninput="filterSidebarList('supervisor')" />
+        <div class="sidebar-list" id="supervisor-list"></div>
+        <span class="sidebar-clear" onclick="clearListFilter('supervisor')">Clear</span>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <!-- DATE ROW -->
+      <div class="date-row">
+        <button class="filter-toggle" onclick="openSidebar()">⚙ Filters</button>
+        <button class="date-btn active" data-range="today" onclick="setDateRange('today', this)">Today</button>
+        <button class="date-btn" data-range="7" onclick="setDateRange('7', this)">7 Days</button>
+        <button class="date-btn" data-range="30" onclick="setDateRange('30', this)">30 Days</button>
+        <button class="date-btn" data-range="custom" onclick="setDateRange('custom', this)">Custom</button>
+        <button class="action-btn" onclick="refreshData()" style="margin-left:auto;" title="Refresh">↻ Refresh</button>
+      </div>
+
+      <div class="date-custom-row" id="custom-row">
+        <input type="date" class="date-input" id="date-from" />
+        <span style="color: var(--text-muted); font-size: 13px;">to</span>
+        <input type="date" class="date-input" id="date-to" />
+        <button class="apply-btn" onclick="applyCustomRange()">Apply</button>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-card stat-total">
+          <div class="stat-label">Total Trips</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="stat-card stat-coal">
+          <div class="stat-label">Coal</div>
+          <div class="stat-value" id="stat-coal">0</div>
+        </div>
+        <div class="stat-card stat-softob">
+          <div class="stat-label">Soft OB</div>
+          <div class="stat-value" id="stat-softob">0</div>
+        </div>
+        <div class="stat-card stat-hardob">
+          <div class="stat-label">Hard OB</div>
+          <div class="stat-value" id="stat-hardob">0</div>
+        </div>
+        <div class="stat-card stat-rehandling">
+          <div class="stat-label">Rehandling</div>
+          <div class="stat-value" id="stat-rehandling">0</div>
+        </div>
+      </div>
+
+      <!-- ACTION BAR -->
+      <div class="action-bar">
+        <div class="result-count" id="result-count">Loading trips...</div>
+        <div class="action-btns">
+          <button class="action-btn" onclick="openSummaryReport()">📋 Summary Report</button>
+          <button class="action-btn" id="raw-data-toggle-btn" onclick="toggleRawData()">🗃 Raw Data</button>
+          <div class="export-wrap">
+            <button class="action-btn primary" onclick="toggleExportMenu()">↓ Export</button>
+            <div class="export-menu" id="export-menu">
+              <div class="export-menu-item" onclick="exportCSV()">
+                <span>📄</span> Export as CSV
+              </div>
+              <div class="export-menu-item" onclick="exportExcel()">
+                <span>📊</span> Export as Excel
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD GRID -->
+      <div id="dashboard-grid">
+        <div class="dash-section-label">By Shift</div>
+        <div class="dash-grid">
+          <div class="dash-btn shift-a" id="dash-shift-A" onclick="selectDash('shift','A')">
+            <div class="dash-alert-dot"></div>
+            <div class="dash-btn-label">Shift A</div>
+            <div class="dash-btn-count" id="dash-count-shift-A">0</div>
+          </div>
+          <div class="dash-btn shift-b" id="dash-shift-B" onclick="selectDash('shift','B')">
+            <div class="dash-alert-dot"></div>
+            <div class="dash-btn-label">Shift B</div>
+            <div class="dash-btn-count" id="dash-count-shift-B">0</div>
+          </div>
+          <div class="dash-btn shift-c" id="dash-shift-C" onclick="selectDash('shift','C')">
+            <div class="dash-alert-dot"></div>
+            <div class="dash-btn-label">Shift C</div>
+            <div class="dash-btn-count" id="dash-count-shift-C">0</div>
+          </div>
+        </div>
+        <div class="dash-section-label">By Material</div>
+        <div class="dash-grid-mat">
+          <div class="dash-btn mat-coal-btn" id="dash-mat-Coal" onclick="selectDash('material','Coal')">
+            <div class="dash-alert-dot"></div>
+            <div class="dash-btn-label">Coal</div>
+            <div class="dash-btn-count" id="dash-count-mat-Coal">0</div>
+          </div>
+          <div class="dash-btn mat-softob-btn" id="dash-mat-Soft OB" onclick="selectDash('material','Soft OB')">
+            <div class="dash-alert-dot"></div>
+            <div class="dash-btn-label">Soft OB</div>
+            <div class="dash-btn-count" id="dash-count-mat-Soft OB">0</div>
+          </div>
+          <div class="dash-btn mat-hardob-btn" id="dash-mat-Hard OB" onclick="selectDash('material','Hard OB')">
+            <div class="dash-alert-dot"></div>
+            <div class="dash-btn-label">Hard OB</div>
+            <div class="dash-btn-count" id="dash-count-mat-Hard OB">0</div>
+          </div>
+          <div class="dash-btn mat-rehandling-btn" id="dash-mat-Rehandling" onclick="selectDash('material','Rehandling')">
+            <div class="dash-alert-dot"></div>
+            <div class="dash-btn-label">Rehandling</div>
+            <div class="dash-btn-count" id="dash-count-mat-Rehandling">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DETAIL PANEL -->
+      <div class="detail-panel" id="detail-panel">
+        <div class="detail-header">
+          <div class="detail-title" id="detail-title">Details</div>
+          <div class="detail-close" onclick="closeDetail()">×</div>
+        </div>
+        <div class="detail-body" id="detail-body"></div>
+      </div>
+
+      <!-- RAW DATA TABLE (hidden by default, toggled) -->
+      <div id="raw-data-section">
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th onclick="sortBy('#')">#</th>
+                  <th onclick="sortBy('date')">Date & Time ↕</th>
+                  <th onclick="sortBy('vehicle')">Vehicle</th>
+                  <th onclick="sortBy('plate')">Number Plate</th>
+                  <th onclick="sortBy('material')">Material</th>
+                  <th onclick="sortBy('shift')">Shift</th>
+                  <th onclick="sortBy('driver')">Driver</th>
+                  <th onclick="sortBy('supervisor')">Supervisor</th>
+                </tr>
+              </thead>
+              <tbody id="trips-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pagination-bar">
+            <div id="page-info" style="font-size: 13px; color: var(--text-secondary);"></div>
+            <div class="page-btns" id="page-btns"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY REPORT PAGE -->
+<div id="summary-page" style="display:none; min-height:100vh; background:var(--bg);">
+  <div class="topbar">
+    <button class="action-btn" onclick="closeSummaryReport()" style="margin-right:8px;">← Back</button>
+    <div class="topbar-title">Summary Report</div>
+    <div class="topbar-user">
+      <span id="sr-date-label" style="font-size:12px; color:var(--text-muted);"></span>
+      <button class="action-btn primary" onclick="askPdfVersion()" style="height:32px; font-size:12px;">⬇ Download PDF</button>
+    </div>
+  </div>
+
+  <div style="padding: 24px; max-width: 1200px; margin: 0 auto;">
+
+    <!-- SHIFT BADGE if filtered -->
+    <div id="sr-shift-badge" style="margin-bottom:16px; display:none;">
+      <span style="font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted);">Filtered Shift: </span>
+      <span id="sr-shift-val" style="font-size:13px; font-weight:700; color:var(--accent);"></span>
+    </div>
+
+    <!-- TOTALS CARDS -->
+    <div class="stats-row" style="margin-bottom:24px;" id="sr-stats"></div>
+
+    <!-- HIERARCHY BROWSER -->
+    <div style="margin-bottom:32px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted);">Trip Breakdown</div>
+        <button class="action-btn" onclick="expandAllHierarchy()" style="height:28px; font-size:11px;">Expand All</button>
+      </div>
+      <div id="sr-hierarchy" style="display:flex; gap:0; border:1px solid var(--border); border-radius:10px; overflow:hidden; min-height:320px;"></div>
+    </div>
+
+    <!-- DRIVERS & VEHICLES -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px;" id="sr-leaderboards">
+
+      <!-- DRIVERS -->
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+        <div style="padding:14px 18px; border-bottom:1px solid var(--border); background:var(--bg); display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted);">Drivers</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr;">
+          <div style="border-right:1px solid var(--border);">
+            <div style="padding:10px 14px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--shift-a); border-bottom:1px solid var(--border);">🏆 Top 5</div>
+            <div id="sr-top-drivers"></div>
+          </div>
+          <div>
+            <div style="padding:10px 14px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--hardob); border-bottom:1px solid var(--border);">⚠ Bottom 5</div>
+            <div id="sr-bot-drivers"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VEHICLES -->
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+        <div style="padding:14px 18px; border-bottom:1px solid var(--border); background:var(--bg); display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted);">Vehicles</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr;">
+          <div style="border-right:1px solid var(--border);">
+            <div style="padding:10px 14px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--shift-a); border-bottom:1px solid var(--border);">🏆 Top 5</div>
+            <div id="sr-top-vehicles"></div>
+          </div>
+          <div>
+            <div style="padding:10px 14px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--hardob); border-bottom:1px solid var(--border);">⚠ Bottom 5</div>
+            <div id="sr-bot-vehicles"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DRIVER LIST MODAL -->
+<div id="driver-modal">
+  <div class="driver-modal-box">
+    <div class="driver-modal-header">
+      <div class="driver-modal-title" id="driver-modal-title">Drivers</div>
+      <div class="driver-modal-close" onclick="closeDriverModal()">×</div>
+    </div>
+    <div class="driver-modal-body" id="driver-modal-body"></div>
+  </div>
+</div>
+
+<!-- TRUCK LIST MODAL -->
+<div id="truck-modal">
+  <div class="driver-modal-box">
+    <div class="driver-modal-header">
+      <div class="driver-modal-title" id="truck-modal-title">Trucks</div>
+      <div class="driver-modal-close" onclick="closeTruckModal()">×</div>
+    </div>
+    <div class="driver-modal-body" id="truck-modal-body"></div>
+  </div>
+</div>
+
+<!-- DRILL-DOWN RAW DATA MODAL -->
+<div id="drill-modal">
+  <div class="drill-modal-box">
+    <div class="drill-modal-header">
+      <div>
+        <div class="drill-modal-title" id="drill-modal-title">Trips</div>
+        <div class="drill-modal-meta" id="drill-modal-meta"></div>
+      </div>
+      <div class="drill-modal-close" onclick="closeDrillModal()">×</div>
+    </div>
+    <div class="drill-modal-body">
+      <table class="drill-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date & Time</th>
+            <th>Vehicle</th>
+            <th>Plate</th>
+            <th>Material</th>
+            <th>Shift</th>
+            <th>Driver</th>
+            <th>Supervisor</th>
+          </tr>
+        </thead>
+        <tbody id="drill-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- CUTOFF PAGE -->
+<div id="cutoff-page">
+  <div class="topbar">
+    <button class="action-btn" onclick="closeCutoffPage()" style="margin-right:8px;">← Back</button>
+    <div class="topbar-title">⏱ Cutoff Time Check</div>
+    <div class="topbar-user">
+      <span style="font-size:12px;color:var(--text-muted);" id="cutoff-date-label"></span>
+    </div>
+  </div>
+  <div style="padding:24px; max-width:1200px; margin:0 auto;">
+
+    <!-- CONFIG GRID -->
+    <div class="cutoff-grid-wrap">
+      <div class="cutoff-grid-title">Cutoff thresholds (minutes before shift end)</div>
+      <div class="cutoff-set-all">
+        <label>Quick set all:</label>
+        <input type="number" class="cutoff-cell-input" id="cutoff-set-all-val" value="25" min="1" max="120" style="width:64px;" />
+        <button class="action-btn" onclick="setAllCutoffs()" style="height:30px;font-size:12px;">Apply to All</button>
+        <span style="font-size:11px;color:var(--text-muted);">A ends 14:00 &nbsp;·&nbsp; B ends 22:00 &nbsp;·&nbsp; C ends 06:00 next day</span>
+      </div>
+      <table class="cutoff-grid-table">
+        <thead>
+          <tr>
+            <th>Material \ Shift</th>
+            <th>Shift A</th>
+            <th>Shift B</th>
+            <th>Shift C</th>
+          </tr>
+        </thead>
+        <tbody id="cutoff-grid-body"></tbody>
+      </table>
+    </div>
+
+    <div class="cutoff-summary-chips" id="cutoff-summary-chips"></div>
+    <div class="cutoff-filter-row">
+      <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Filter:</span>
+      <button class="action-btn primary" id="cutoff-filter-all"  onclick="setCutoffFilter('all')"  style="height:30px;font-size:12px;">All</button>
+      <button class="action-btn"         id="cutoff-filter-warn" onclick="setCutoffFilter('warn')" style="height:30px;font-size:12px;">⚠ Early Only</button>
+      <button class="action-btn"         id="cutoff-filter-ok"   onclick="setCutoffFilter('ok')"   style="height:30px;font-size:12px;">✓ OK Only</button>
+    </div>
+    <div class="cutoff-table-wrap">
+      <table class="cutoff-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Shift</th>
+            <th>Driver</th>
+            <th>Truck</th>
+            <th>Material</th>
+            <th>Last Trip</th>
+            <th>Shift Ends</th>
+            <th>Mins Before End</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="cutoff-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PDF VERSION MODAL -->
+<div id="pdf-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9000; align-items:center; justify-content:center;">
+  <div style="background:var(--surface); border-radius:12px; padding:32px; width:320px; text-align:center;">
+    <div style="font-size:16px; font-weight:600; color:var(--accent); margin-bottom:8px;">Download PDF</div>
+    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:24px;">Choose report version</div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button class="action-btn primary" onclick="downloadPdf('short')" style="height:42px; font-size:13px; justify-content:center;">
+        📄 Short Version
+        <span style="font-size:11px; font-weight:400; opacity:0.8; display:block;">Totals + Top/Bottom 5</span>
+      </button>
+      <button class="action-btn" onclick="downloadPdf('long')" style="height:42px; font-size:13px; justify-content:center;">
+        📑 Long Version
+        <span style="font-size:11px; font-weight:400; display:block; color:var(--text-muted);">Full hierarchy + all details</span>
+      </button>
+      <button class="action-btn" onclick="document.getElementById('pdf-modal').style.display='none'" style="height:36px; font-size:12px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+const API = 'https://mining-trips-hub.emergent.host/api';
+let currentUser = null;
+let allTrips = [];
+let filteredTrips = [];
+let allVehicles = [];
+let allDrivers = [];
+let allWorkers = [];
+let currentPage = 1;
+const PAGE_SIZE = 50;
+let sortField = 'date';
+let sortDir = -1;
+
+let activeFilters = {
+  shifts: new Set(),
+  materials: new Set(),
+  vehicles: new Set(),
+  drivers: new Set(),
+  supervisors: new Set()
+};
+
+let dateRange = { type: 'today', from: null, to: null };
+
+async function doLogin() {
+  const worker_id = document.getElementById('login-id').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!worker_id || !password) { errEl.textContent = 'Please enter both fields.'; return; }
+  showLoading(true);
+  try {
+    const res = await fetch(`${API}/workers/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ worker_id, password })
+    });
+    if (!res.ok) { errEl.textContent = 'Invalid credentials. Try again.'; showLoading(false); return; }
+    const data = await res.json();
+    currentUser = data;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('topbar-username').textContent = data.name || worker_id;
+    initApp();
+  } catch (e) {
+    errEl.textContent = 'Connection error. Check your network.';
+  }
+  showLoading(false);
+}
+
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-id').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+function doLogout() {
+  currentUser = null;
+  allTrips = [];
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+async function initApp() {
+  showLoading(true);
+  await Promise.all([loadVehicles(), loadDrivers(), loadWorkers()]);
+  await loadTrips();
+  showLoading(false);
+}
+
+async function loadVehicles() {
+  try {
+    const res = await fetch(`${API}/vehicles`);
+    allVehicles = await res.json();
+    renderSidebarList('vehicle', allVehicles.map(v => ({ id: v._id, label: v.vehicle_number })));
+  } catch(e) {}
+}
+
+async function loadDrivers() {
+  try {
+    const res = await fetch(`${API}/drivers`);
+    allDrivers = await res.json();
+    renderSidebarList('driver', allDrivers.map(d => ({ id: d._id, label: d.name })));
+  } catch(e) {}
+}
+
+async function loadWorkers() {
+  try {
+    const res = await fetch(`${API}/workers`);
+    allWorkers = await res.json();
+    renderSidebarList('supervisor', allWorkers.map(w => ({ id: w._id, label: w.name })));
+  } catch(e) {}
+}
+
+async function loadTrips() {
+  showLoading(true);
+  try {
+    const params = buildDateParams();
+    const url = `${API}/trips?${params}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    allTrips = Array.isArray(data) ? data : (data.trips || []);
+    applyFilters();
+  } catch(e) {
+    showToast('Failed to load trips. Check connection.');
+  }
+  showLoading(false);
+}
+
+function buildDateParams() {
+  const p = new URLSearchParams();
+  const now = new Date();
+  if (dateRange.type === 'today') {
+    const d = now.toISOString().split('T')[0];
+    p.set('start_date', d);
+    p.set('end_date', d);
+  } else if (dateRange.type === '7') {
+    const from = new Date(now); from.setDate(from.getDate() - 6);
+    p.set('start_date', from.toISOString().split('T')[0]);
+    p.set('end_date', now.toISOString().split('T')[0]);
+  } else if (dateRange.type === '30') {
+    const from = new Date(now); from.setDate(from.getDate() - 29);
+    p.set('start_date', from.toISOString().split('T')[0]);
+    p.set('end_date', now.toISOString().split('T')[0]);
+  } else if (dateRange.type === 'custom' && dateRange.from && dateRange.to) {
+    p.set('start_date', dateRange.from);
+    p.set('end_date', dateRange.to);
+  }
+  return p.toString();
+}
+
+function applyFilters() {
+  filteredTrips = allTrips.filter(t => {
+    if (activeFilters.shifts.size > 0 && !activeFilters.shifts.has(t.shift)) return false;
+    if (activeFilters.materials.size > 0 && !activeFilters.materials.has(t.material_type)) return false;
+    if (activeFilters.vehicles.size > 0 && !activeFilters.vehicles.has(t.vehicle_id)) return false;
+    if (activeFilters.drivers.size > 0 && !activeFilters.drivers.has(t.driver_id)) return false;
+    if (activeFilters.supervisors.size > 0 && !activeFilters.supervisors.has(t.worker_id)) return false;
+    return true;
+  });
+
+  filteredTrips.sort((a, b) => {
+    let va, vb;
+    if (sortField === 'date') { va = new Date(a.timestamp); vb = new Date(b.timestamp); }
+    else { va = 0; vb = 0; }
+    return sortDir * (va > vb ? 1 : va < vb ? -1 : 0);
+  });
+
+  updateStats();
+  updateDashboard();
+  currentPage = 1;
+  if (rawDataVisible) renderTable();
+}
+
+function updateStats() {
+  const totals = { Coal: 0, 'Soft OB': 0, 'Hard OB': 0, Rehandling: 0 };
+  filteredTrips.forEach(t => { if (totals[t.material_type] !== undefined) totals[t.material_type]++; });
+  document.getElementById('stat-total').textContent = filteredTrips.length;
+  document.getElementById('stat-coal').textContent = totals['Coal'];
+  document.getElementById('stat-softob').textContent = totals['Soft OB'];
+  document.getElementById('stat-hardob').textContent = totals['Hard OB'];
+  document.getElementById('stat-rehandling').textContent = totals['Rehandling'];
+  document.getElementById('result-count').innerHTML = `Showing <strong>${filteredTrips.length}</strong> trip${filteredTrips.length !== 1 ? 's' : ''}`;
+}
+
+function getVehicleNum(id) {
+  const v = allVehicles.find(x => x._id === id);
+  return v ? v.vehicle_number : id || '—';
+}
+
+function getVehiclePlate(id) {
+  const v = allVehicles.find(x => x._id === id);
+  return v ? v.number_plate : '—';
+}
+
+function getDriverName(id) {
+  const d = allDrivers.find(x => x._id === id);
+  return d ? d.name : id || '—';
+}
+
+function getWorkerName(id) {
+  const w = allWorkers.find(x => x._id === id);
+  return w ? w.name : id || '—';
+}
+
+function fmtDate(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+function matBadge(m) {
+  const map = {
+    'Coal': 'coal',
+    'Soft OB': 'softob',
+    'Hard OB': 'hardob',
+    'Rehandling': 'rehandling'
+  };
+  const cls = map[m] || 'coal';
+  return `<span class="mat-badge mat-${cls}"><span class="mat-dot"></span>${m}</span>`;
+}
+
+function shiftBadge(s) {
+  return `<span class="shift-badge shift-${s}">${s}</span>`;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('trips-tbody');
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page = filteredTrips.slice(start, start + PAGE_SIZE);
+
+  if (filteredTrips.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      <p>No trips found for the selected filters</p></div></td></tr>`;
+    renderPagination();
+    return;
+  }
+
+  tbody.innerHTML = page.map((t, i) => `
+    <tr>
+      <td class="td-num">${start + i + 1}</td>
+      <td style="font-size:12px; color: var(--text-secondary);">${fmtDate(t.timestamp)}</td>
+      <td style="font-weight:500;"><span class="entity-link" onclick="openDrillByTruck('${getVehicleNum(t.vehicle_id)}',event)">${getVehicleNum(t.vehicle_id)}</span></td>
+      <td style="font-family: var(--font-mono); font-size:12px;">${getVehiclePlate(t.vehicle_id)}</td>
+      <td>${matBadge(t.material_type)}</td>
+      <td>${shiftBadge(t.shift)}</td>
+      <td><span class="entity-link" onclick="openDrillByDriverName('${getDriverName(t.driver_id).replace(/'/g,"\\'")}',event)">${getDriverName(t.driver_id)}</span></td>
+      <td style="color: var(--text-secondary);">${getWorkerName(t.worker_id)}</td>
+    </tr>
+  `).join('');
+
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = filteredTrips.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const start = (currentPage - 1) * PAGE_SIZE + 1;
+  const end = Math.min(currentPage * PAGE_SIZE, total);
+
+  document.getElementById('page-info').textContent = total > 0
+    ? `${start}–${end} of ${total}`
+    : '';
+
+  const container = document.getElementById('page-btns');
+  if (pages <= 1) { container.innerHTML = ''; return; }
+
+  let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+
+  for (let p = 1; p <= pages; p++) {
+    if (pages > 7) {
+      if (p !== 1 && p !== pages && Math.abs(p - currentPage) > 2) {
+        if (p === 2 || p === pages - 1) html += `<span style="padding: 0 4px; color: var(--text-muted);">…</span>`;
+        continue;
+      }
+    }
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+  }
+
+  html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === pages ? 'disabled' : ''}>›</button>`;
+  container.innerHTML = html;
+}
+
+function goPage(p) {
+  const pages = Math.ceil(filteredTrips.length / PAGE_SIZE);
+  if (p < 1 || p > pages) return;
+  currentPage = p;
+  renderTable();
+  document.querySelector('.content').scrollTop = 0;
+}
+
+function sortBy(field) {
+  if (sortField === field) sortDir *= -1;
+  else { sortField = field; sortDir = -1; }
+  applyFilters();
+}
+
+// DATE RANGE
+function setDateRange(type, btn) {
+  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  dateRange.type = type;
+  const customRow = document.getElementById('custom-row');
+  if (type === 'custom') { customRow.classList.add('visible'); return; }
+  customRow.classList.remove('visible');
+  loadTrips();
+}
+
+function applyCustomRange() {
+  const from = document.getElementById('date-from').value;
+  const to = document.getElementById('date-to').value;
+  if (!from || !to) { showToast('Select both dates.'); return; }
+  dateRange.from = from;
+  dateRange.to = to;
+  loadTrips();
+}
+
+async function refreshData() {
+  await loadTrips();
+  showToast('Data refreshed');
+}
+
+// SIDEBAR LISTS
+function renderSidebarList(type, items) {
+  const listEl = document.getElementById(`${type}-list`);
+  listEl.innerHTML = items.map(item => `
+    <div class="sidebar-item" onclick="toggleListFilter('${type}', '${item.id}', this)">
+      <input type="checkbox" id="chk-${type}-${item.id}" />
+      <span>${item.label}</span>
+    </div>
+  `).join('');
+}
+
+function filterSidebarList(type) {
+  const q = document.getElementById(`${type}-search`).value.toLowerCase();
+  document.querySelectorAll(`#${type}-list .sidebar-item`).forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function toggleListFilter(type, id, el) {
+  const chk = el.querySelector('input');
+  const key = type === 'vehicle' ? 'vehicles' : type === 'driver' ? 'drivers' : 'supervisors';
+  if (activeFilters[key].has(id)) {
+    activeFilters[key].delete(id);
+    chk.checked = false;
+  } else {
+    activeFilters[key].add(id);
+    chk.checked = true;
+  }
+  applyFilters();
+}
+
+function clearListFilter(type) {
+  const key = type === 'vehicle' ? 'vehicles' : type === 'driver' ? 'drivers' : 'supervisors';
+  activeFilters[key].clear();
+  document.querySelectorAll(`#${type}-list input`).forEach(c => c.checked = false);
+  applyFilters();
+}
+
+// CHIP FILTERS
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const type = chip.dataset.type;
+    const val = chip.dataset.val;
+    const key = type === 'shift' ? 'shifts' : 'materials';
+    if (activeFilters[key].has(val)) {
+      activeFilters[key].delete(val);
+      chip.classList.remove('active');
+    } else {
+      activeFilters[key].add(val);
+      chip.classList.add('active');
+    }
+    applyFilters();
+  });
+});
+
+// EXPORT
+function toggleExportMenu() {
+  document.getElementById('export-menu').classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.export-wrap')) {
+    document.getElementById('export-menu').classList.remove('open');
+  }
+});
+
+function getDateRangeLabel() {
+  const now = new Date();
+  if (dateRange.type === 'today') {
+    return now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  } else if (dateRange.type === '7') {
+    const from = new Date(now); from.setDate(from.getDate() - 6);
+    return from.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' – ' + now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  } else if (dateRange.type === '30') {
+    const from = new Date(now); from.setDate(from.getDate() - 29);
+    return from.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' – ' + now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  } else if (dateRange.type === 'custom' && dateRange.from && dateRange.to) {
+    return dateRange.from + ' – ' + dateRange.to;
+  }
+  return '';
+}
+
+function tripsToRows() {
+  return filteredTrips.map((t, i) => ({
+    '#': i + 1,
+    'Date': t.mining_date || (t.timestamp ? t.timestamp.split('T')[0] : ''),
+    'Time': t.timestamp ? new Date(t.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '',
+    'Vehicle': getVehicleNum(t.vehicle_id),
+    'Number Plate': getVehiclePlate(t.vehicle_id),
+    'Material': t.material_type,
+    'Shift': t.shift,
+    'Driver': getDriverName(t.driver_id),
+    'Supervisor': getWorkerName(t.worker_id)
+  }));
+}
+
+function exportCSV() {
+  document.getElementById('export-menu').classList.remove('open');
+  const rows = tripsToRows();
+  if (!rows.length) { showToast('No trips to export'); return; }
+
+  const dateLabel = getDateRangeLabel();
+  const generatedOn = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  // Count by material
+  const coal = filteredTrips.filter(t => t.material_type === 'Coal').length;
+  const softob = filteredTrips.filter(t => t.material_type === 'Soft OB').length;
+  const hardob = filteredTrips.filter(t => t.material_type === 'Hard OB').length;
+  const rehandling = filteredTrips.filter(t => t.material_type === 'Rehandling').length;
+
+  const headers = Object.keys(rows[0]);
+  const lines = [];
+
+  // Header block
+  lines.push('"LISPL"');
+  lines.push('"Trip Reports"');
+  lines.push(`"Date Range:","${dateLabel}"`);
+  lines.push(`"Generated On:","${generatedOn}"`);
+  lines.push('');
+
+  // Summary at top
+  lines.push('"SUMMARY"');
+  lines.push(`"Total Trips","${rows.length}"`);
+  lines.push(`"Coal","${coal}"`);
+  lines.push(`"Soft OB","${softob}"`);
+  lines.push(`"Hard OB","${hardob}"`);
+  lines.push(`"Rehandling","${rehandling}"`);
+  lines.push('');
+
+  // Column headers
+  lines.push(headers.map(h => `"${h}"`).join(','));
+
+  // Data rows
+  rows.forEach(r => lines.push(headers.map(h => `"${r[h]}"`).join(',')));
+
+  const csv = lines.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `LISPL_TripReport_${Date.now()}.csv`;
+  a.click();
+  showToast('CSV downloaded');
+}
+
+function exportExcel() {
+  document.getElementById('export-menu').classList.remove('open');
+  const rows = tripsToRows();
+  if (!rows.length) { showToast('No trips to export'); return; }
+
+  const dateLabel = getDateRangeLabel();
+  const generatedOn = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+  const coal = filteredTrips.filter(t => t.material_type === 'Coal').length;
+  const softob = filteredTrips.filter(t => t.material_type === 'Soft OB').length;
+  const hardob = filteredTrips.filter(t => t.material_type === 'Hard OB').length;
+  const rehandling = filteredTrips.filter(t => t.material_type === 'Rehandling').length;
+
+  // --- Build XML directly for guaranteed styling ---
+  const esc = v => String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  // Styles:
+  // 0 = default
+  // 1 = title (white bold 14pt on navy)
+  // 2 = subtitle (white bold 11pt on navy)
+  // 3 = meta label (bold navy)
+  // 4 = meta value (grey)
+  // 5 = summary header (white bold on dark)
+  // 6 = summary label (bold)
+  // 7 = summary value (navy center)
+  // 8 = col header (white bold on navy, center, border)
+  // 9 = data even (light bg)
+  // 10 = data odd (white)
+  // 11 = material Coal
+  // 12 = material Soft OB
+  // 13 = material Hard OB
+  // 14 = material Rehandling
+  // 15 = shift (bold center, even)
+  // 16 = shift (bold center, odd)
+  // 17 = border even
+  // 18 = border odd
+
+  const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="9">
+    <font><sz val="11"/><name val="Calibri"/></font>
+    <font><b/><sz val="14"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
+    <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
+    <font><b/><sz val="10"/><color rgb="FF1a3a5c"/><name val="Calibri"/></font>
+    <font><sz val="10"/><color rgb="FF444444"/><name val="Calibri"/></font>
+    <font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
+    <font><b/><sz val="10"/><name val="Calibri"/></font>
+    <font><sz val="10"/><color rgb="FF1a3a5c"/><name val="Calibri"/></font>
+    <font><sz val="10"/><name val="Calibri"/></font>
+  </fonts>
+  <fills count="12">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF1a3a5c"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF2d2d2d"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFf5f4f0"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFffffff"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFf0f0f0"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFfef6e7"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFfdecea"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFe8f4fb"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFe8eef5"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFdde5ed"/></patternFill></fill>
+  </fills>
+  <borders count="3">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+    <border><left style="thin"><color rgb="FFcccccc"/></left><right style="thin"><color rgb="FFcccccc"/></right><top style="thin"><color rgb="FFcccccc"/></top><bottom style="thin"><color rgb="FFcccccc"/></bottom><diagonal/></border>
+    <border><left style="thin"><color rgb="FFaaaaaa"/></left><right style="thin"><color rgb="FFaaaaaa"/></right><top style="thin"><color rgb="FFaaaaaa"/></top><bottom style="thin"><color rgb="FFaaaaaa"/></bottom><diagonal/></border>
+  </borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="19">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="left"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="left"/></xf>
+    <xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+    <xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+    <xf numFmtId="0" fontId="5" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="left"/></xf>
+    <xf numFmtId="0" fontId="6" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+    <xf numFmtId="0" fontId="7" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="center"/></xf>
+    <xf numFmtId="0" fontId="5" fillId="2" borderId="2" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center"/></xf>
+    <xf numFmtId="0" fontId="8" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
+    <xf numFmtId="0" fontId="8" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
+    <xf numFmtId="0" fontId="6" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center"/></xf>
+    <xf numFmtId="0" fontId="6" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center"/></xf>
+    <xf numFmtId="0" fontId="6" fillId="8" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center"/></xf>
+    <xf numFmtId="0" fontId="6" fillId="9" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center"/></xf>
+    <xf numFmtId="0" fontId="6" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center"/></xf>
+    <xf numFmtId="0" fontId="6" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center"/></xf>
+    <xf numFmtId="0" fontId="8" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center"/></xf>
+    <xf numFmtId="0" fontId="8" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center"/></xf>
+  </cellXfs>
+</styleSheet>`;
+
+  const matStyleEven = { 'Coal': 11, 'Soft OB': 12, 'Hard OB': 13, 'Rehandling': 14 };
+  const matStyleOdd  = { 'Coal': 11, 'Soft OB': 12, 'Hard OB': 13, 'Rehandling': 14 };
+
+  function cellS(s, v) {
+    const isNum = typeof v === 'number';
+    const t = isNum ? '' : ' t="s"';
+    return `<c s="${s}"${isNum ? '' : ' t="inlineStr"'}><${isNum ? 'v' : 'is'}>${isNum ? v : `<t>${esc(v)}</t>`}</${isNum ? 'v' : 'is'}></c>`;
+  }
+  function emptyS(s) { return `<c s="${s}"/>`; }
+
+  let sheetRows = '';
+  let rowIdx = 1;
+
+  // Row 1: LISPL title
+  sheetRows += `<row r="${rowIdx}" ht="22" customHeight="1">${cellS(1,'LISPL')}${[...Array(8)].map(()=>emptyS(1)).join('')}</row>\n`; rowIdx++;
+  // Row 2: Trip Reports
+  sheetRows += `<row r="${rowIdx}" ht="18">${cellS(2,'Trip Reports')}${[...Array(8)].map(()=>emptyS(2)).join('')}</row>\n`; rowIdx++;
+  // Row 3: Date Range
+  sheetRows += `<row r="${rowIdx}">${cellS(3,'Date Range:')}${cellS(4,dateLabel)}${[...Array(7)].map(()=>emptyS(0)).join('')}</row>\n`; rowIdx++;
+  // Row 4: Generated On
+  sheetRows += `<row r="${rowIdx}">${cellS(3,'Generated On:')}${cellS(4,generatedOn)}${[...Array(7)].map(()=>emptyS(0)).join('')}</row>\n`; rowIdx++;
+  // Row 5: blank
+  sheetRows += `<row r="${rowIdx}"><c s="0"/></row>\n`; rowIdx++;
+  // Row 6: SUMMARY header
+  sheetRows += `<row r="${rowIdx}" ht="16">${cellS(5,'SUMMARY')}${[...Array(8)].map(()=>emptyS(5)).join('')}</row>\n`; rowIdx++;
+  // Rows 7-11: summary data
+  [['Total Trips', rows.length],['Coal',coal],['Soft OB',softob],['Hard OB',hardob],['Rehandling',rehandling]].forEach(([label,val])=>{
+    sheetRows += `<row r="${rowIdx}">${cellS(6,label)}${cellS(7,val)}${[...Array(7)].map(()=>emptyS(0)).join('')}</row>\n`; rowIdx++;
+  });
+  // Row 12: blank
+  sheetRows += `<row r="${rowIdx}"><c s="0"/></row>\n`; rowIdx++;
+  // Row 13: Column headers
+  const headers = ['#','Date','Time','Vehicle','Number Plate','Material','Shift','Driver','Supervisor'];
+  sheetRows += `<row r="${rowIdx}" ht="18">${headers.map(h=>cellS(8,h)).join('')}</row>\n`; rowIdx++;
+  // Data rows
+  rows.forEach((r, i) => {
+    const even = i % 2 === 0;
+    const baseS = even ? 9 : 10;
+    const shiftS = even ? 15 : 16;
+    const matS = matStyleEven[r['Material']] || baseS;
+    const vals = Object.values(r);
+    const cells = vals.map((v, ci) => {
+      if (ci === 5) return cellS(matS, v);       // Material
+      if (ci === 6) return cellS(shiftS, v);     // Shift
+      if (ci === 0) return cellS(even ? 17 : 18, v); // # centered
+      return cellS(baseS, v);
+    });
+    sheetRows += `<row r="${rowIdx}">${cells.join('')}</row>\n`; rowIdx++;
+  });
+
+  const sheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetFormatPr defaultRowHeight="15"/>
+  <cols>
+    <col min="1" max="1" width="6" customWidth="1"/>
+    <col min="2" max="2" width="13" customWidth="1"/>
+    <col min="3" max="3" width="10" customWidth="1"/>
+    <col min="4" max="4" width="12" customWidth="1"/>
+    <col min="5" max="5" width="16" customWidth="1"/>
+    <col min="6" max="6" width="13" customWidth="1"/>
+    <col min="7" max="7" width="8" customWidth="1"/>
+    <col min="8" max="8" width="22" customWidth="1"/>
+    <col min="9" max="9" width="20" customWidth="1"/>
+  </cols>
+  <sheetData>${sheetRows}</sheetData>
+</worksheet>`;
+
+  const wbXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets><sheet name="Trip Report" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`;
+
+  const relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+
+  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>`;
+
+  const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`;
+
+  // Use JSZip via XLSX's bundled zip
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', contentTypes);
+  zip.file('_rels/.rels', rootRels);
+  zip.file('xl/workbook.xml', wbXml);
+  zip.file('xl/_rels/workbook.xml.rels', relsXml);
+  zip.file('xl/styles.xml', stylesXml);
+  zip.file('xl/worksheets/sheet1.xml', sheetXml);
+
+  zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).then(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `LISPL_TripReport_${Date.now()}.xlsx`;
+    a.click();
+    showToast('Excel downloaded');
+  });
+}
+
+// ─── SUMMARY REPORT ────────────────────────────────────────────────
+let srHierarchyState = { selectedDate: null, selectedShift: null };
+
+function openSummaryReport() {
+  srHierarchyState = { selectedDate: null, selectedShift: null };
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('summary-page').style.display = 'block';
+  renderSummaryReport();
+}
+
+function closeSummaryReport() {
+  document.getElementById('summary-page').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+function renderSummaryReport() {
+  const trips = filteredTrips;
+
+  // Date label
+  document.getElementById('sr-date-label').textContent = getDateRangeLabel();
+
+  // Shift badge
+  const shifts = [...activeFilters.shifts];
+  if (shifts.length === 1) {
+    document.getElementById('sr-shift-badge').style.display = 'block';
+    document.getElementById('sr-shift-val').textContent = 'Shift ' + shifts[0];
+  } else {
+    document.getElementById('sr-shift-badge').style.display = 'none';
+  }
+
+  // Stats
+  const coal = trips.filter(t => t.material_type === 'Coal').length;
+  const softob = trips.filter(t => t.material_type === 'Soft OB').length;
+  const hardob = trips.filter(t => t.material_type === 'Hard OB').length;
+  const rehandling = trips.filter(t => t.material_type === 'Rehandling').length;
+  document.getElementById('sr-stats').innerHTML = `
+    <div class="stat-card stat-total"><div class="stat-label">Total Trips</div><div class="stat-value">${trips.length}</div></div>
+    <div class="stat-card stat-coal"><div class="stat-label">Coal</div><div class="stat-value">${coal}</div></div>
+    <div class="stat-card stat-softob"><div class="stat-label">Soft OB</div><div class="stat-value">${softob}</div></div>
+    <div class="stat-card stat-hardob"><div class="stat-label">Hard OB</div><div class="stat-value">${hardob}</div></div>
+    <div class="stat-card stat-rehandling"><div class="stat-label">Rehandling</div><div class="stat-value">${rehandling}</div></div>
+  `;
+
+  // Build hierarchy
+  renderHierarchy(trips);
+
+  // Leaderboards
+  renderLeaderboards(trips);
+}
+
+function buildHierarchyData(trips) {
+  // Group by date → shift → material
+  const byDate = {};
+  trips.forEach(t => {
+    const date = t.mining_date || (t.timestamp ? t.timestamp.split('T')[0] : 'Unknown');
+    const shift = t.shift || 'Unknown';
+    const mat = t.material_type || 'Unknown';
+    if (!byDate[date]) byDate[date] = {};
+    if (!byDate[date][shift]) byDate[date][shift] = {};
+    if (!byDate[date][shift][mat]) byDate[date][shift][mat] = 0;
+    byDate[date][shift][mat]++;
+  });
+  return byDate;
+}
+
+function renderHierarchy(trips) {
+  const data = buildHierarchyData(trips);
+  const dates = Object.keys(data).sort().reverse();
+  const container = document.getElementById('sr-hierarchy');
+  container.innerHTML = '';
+
+  // Column 1: Dates
+  const col1 = makeHierCol('Date');
+  dates.forEach(date => {
+    const total = Object.values(data[date]).reduce((s, shifts) => s + Object.values(shifts).reduce((a,b)=>a+b,0), 0);
+    const item = makeHierItem(fmtDateShort(date), total, date === srHierarchyState.selectedDate);
+    item.onclick = () => {
+      srHierarchyState.selectedDate = date;
+      srHierarchyState.selectedShift = null;
+      renderHierarchy(trips);
+    };
+    col1.appendChild(item);
+  });
+  container.appendChild(col1);
+
+  // Column 2: Shifts (if date selected)
+  if (srHierarchyState.selectedDate && data[srHierarchyState.selectedDate]) {
+    const shiftData = data[srHierarchyState.selectedDate];
+    const col2 = makeHierCol('Shift');
+    Object.keys(shiftData).sort().forEach(shift => {
+      const total = Object.values(shiftData[shift]).reduce((a,b)=>a+b,0);
+      const item = makeHierItem('Shift ' + shift, total, shift === srHierarchyState.selectedShift);
+      item.onclick = () => {
+        srHierarchyState.selectedShift = shift;
+        renderHierarchy(trips);
+      };
+      col2.appendChild(item);
+    });
+    container.appendChild(col2);
+  }
+
+  // Column 3: Materials (if shift selected)
+  if (srHierarchyState.selectedDate && srHierarchyState.selectedShift &&
+      data[srHierarchyState.selectedDate] &&
+      data[srHierarchyState.selectedDate][srHierarchyState.selectedShift]) {
+    const matData = data[srHierarchyState.selectedDate][srHierarchyState.selectedShift];
+    const col3 = makeHierCol('Material');
+    const matOrder = ['Coal','Soft OB','Hard OB','Rehandling'];
+    matOrder.forEach(mat => {
+      if (matData[mat] !== undefined) {
+        const item = makeHierItem(mat, matData[mat], false, true);
+        item.style.cursor = 'default';
+        col3.appendChild(item);
+      }
+    });
+    container.appendChild(col3);
+  }
+}
+
+function makeHierCol(title) {
+  const col = document.createElement('div');
+  col.className = 'hier-col';
+  const header = document.createElement('div');
+  header.className = 'hier-col-header';
+  header.textContent = title;
+  col.appendChild(header);
+  return col;
+}
+
+function makeHierItem(name, count, selected, leaf) {
+  const item = document.createElement('div');
+  item.className = 'hier-item' + (selected ? ' selected' : '');
+  item.innerHTML = `
+    <span class="hier-item-name">${name}</span>
+    <span class="hier-count">${count}${!leaf ? ' →' : ''}</span>
+  `;
+  return item;
+}
+
+function fmtDateShort(dateStr) {
+  if (!dateStr || dateStr === 'Unknown') return 'Unknown';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short' });
+}
+
+function expandAllHierarchy() {
+  // Auto-select first date and first shift
+  const data = buildHierarchyData(filteredTrips);
+  const dates = Object.keys(data).sort().reverse();
+  if (dates.length > 0) {
+    srHierarchyState.selectedDate = dates[0];
+    const shifts = Object.keys(data[dates[0]]).sort();
+    if (shifts.length > 0) srHierarchyState.selectedShift = shifts[0];
+  }
+  renderHierarchy(filteredTrips);
+}
+
+function renderLeaderboards(trips) {
+  // Drivers
+  const driverCount = {};
+  trips.forEach(t => {
+    const name = getDriverName(t.driver_id);
+    if (name && name !== '—') driverCount[name] = (driverCount[name] || 0) + 1;
+  });
+  const driversSorted = Object.entries(driverCount).sort((a,b) => b[1]-a[1]);
+  const maxD = driversSorted[0]?.[1] || 1;
+  document.getElementById('sr-top-drivers').innerHTML = driversSorted.slice(0,5).map(([n,c],i) => lbRow(i+1,n,c,maxD,false)).join('');
+  document.getElementById('sr-bot-drivers').innerHTML = [...driversSorted].reverse().slice(0,5).map(([n,c],i) => lbRow(i+1,n,c,maxD,true)).join('');
+
+  // Vehicles
+  const vehCount = {};
+  trips.forEach(t => {
+    const num = getVehicleNum(t.vehicle_id);
+    if (num && num !== '—') vehCount[num] = (vehCount[num] || 0) + 1;
+  });
+  const vehSorted = Object.entries(vehCount).sort((a,b) => b[1]-a[1]);
+  const maxV = vehSorted[0]?.[1] || 1;
+  document.getElementById('sr-top-vehicles').innerHTML = vehSorted.slice(0,5).map(([n,c],i) => lbRow(i+1,n,c,maxV,false)).join('');
+  document.getElementById('sr-bot-vehicles').innerHTML = [...vehSorted].reverse().slice(0,5).map(([n,c],i) => lbRow(i+1,n,c,maxV,true)).join('');
+}
+
+function lbRow(rank, name, count, max, isBottom) {
+  const pct = Math.round((count / max) * 100);
+  return `<div class="lb-row ${isBottom ? 'bottom' : ''}">
+    <span class="lb-rank">${rank}</span>
+    <span class="lb-name">
+      ${name}
+      <div class="lb-bar" style="width:${pct}%"></div>
+    </span>
+    <span class="lb-count">${count}</span>
+  </div>`;
+}
+
+// PDF
+function askPdfVersion() {
+  document.getElementById('pdf-modal').style.display = 'flex';
+}
+
+function downloadPdf(version) {
+  document.getElementById('pdf-modal').style.display = 'none';
+  const trips = filteredTrips;
+  const dateLabel = getDateRangeLabel();
+  const shifts = [...activeFilters.shifts];
+  const shiftLabel = shifts.length === 1 ? 'Shift ' + shifts[0] : 'All Shifts';
+  const coal = trips.filter(t=>t.material_type==='Coal').length;
+  const softob = trips.filter(t=>t.material_type==='Soft OB').length;
+  const hardob = trips.filter(t=>t.material_type==='Hard OB').length;
+  const rehandling = trips.filter(t=>t.material_type==='Rehandling').length;
+
+  // Build driver & vehicle leaderboards
+  const driverCount = {};
+  trips.forEach(t => { const n=getDriverName(t.driver_id); if(n&&n!=='—') driverCount[n]=(driverCount[n]||0)+1; });
+  const driversSorted = Object.entries(driverCount).sort((a,b)=>b[1]-a[1]);
+
+  const vehCount = {};
+  trips.forEach(t => { const n=getVehicleNum(t.vehicle_id); if(n&&n!=='—') vehCount[n]=(vehCount[n]||0)+1; });
+  const vehSorted = Object.entries(vehCount).sort((a,b)=>b[1]-a[1]);
+
+  const lbTableRows = (arr, isBottom) => arr.slice(0,5).map(([n,c],i) =>
+    `<tr><td style="color:#999;font-size:11px;padding:6px 10px;">${i+1}</td>
+     <td style="padding:6px 10px;font-weight:500;">${n}</td>
+     <td style="padding:6px 10px;font-weight:700;color:${isBottom?'#c0392b':'#1a3a5c'};text-align:right;">${c}</td></tr>`
+  ).join('');
+
+  let hierarchyHtml = '';
+  if (version === 'long') {
+    const data = buildHierarchyData(trips);
+    const dates = Object.keys(data).sort().reverse();
+    hierarchyHtml = `<h3 style="font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:#999;margin:24px 0 12px;">Trip Breakdown</h3>`;
+    dates.forEach(date => {
+      const shiftData = data[date];
+      const dateTotal = Object.values(shiftData).reduce((s,v)=>s+Object.values(v).reduce((a,b)=>a+b,0),0);
+      hierarchyHtml += `<div style="margin-bottom:12px;border:1px solid #e2e0d8;border-radius:8px;overflow:hidden;">
+        <div style="padding:8px 14px;background:#f5f4f0;font-weight:600;font-size:13px;display:flex;justify-content:space-between;">
+          <span>${fmtDateShort(date)}</span><span style="color:#1a3a5c;">${dateTotal} trips</span>
+        </div>`;
+      Object.keys(shiftData).sort().forEach(shift => {
+        const mats = shiftData[shift];
+        const shiftTotal = Object.values(mats).reduce((a,b)=>a+b,0);
+        hierarchyHtml += `<div style="padding:6px 14px 6px 24px;border-top:1px solid #e2e0d8;display:flex;justify-content:space-between;font-size:12px;">
+          <span style="font-weight:500;">Shift ${shift}</span><span style="color:#6b6860;">${shiftTotal} trips</span>
+        </div>`;
+        ['Coal','Soft OB','Hard OB','Rehandling'].forEach(mat => {
+          if (mats[mat]) hierarchyHtml += `<div style="padding:4px 14px 4px 40px;display:flex;justify-content:space-between;font-size:11px;color:#6b6860;">
+            <span>${mat}</span><span>${mats[mat]}</span>
+          </div>`;
+        });
+      });
+      hierarchyHtml += `</div>`;
+    });
+  }
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>LISPL Summary Report</title>
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 32px; color: #1a1917; font-size: 13px; }
+    h1 { font-size: 22px; color: #1a3a5c; margin: 0 0 4px; }
+    .meta { color: #9b9890; font-size: 12px; margin-bottom: 24px; }
+    .stats { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 24px; }
+    .stat { border: 1px solid #e2e0d8; border-radius: 8px; padding: 12px; }
+    .stat-l { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #9b9890; margin-bottom: 4px; }
+    .stat-v { font-size: 24px; font-weight: 700; color: #1a3a5c; }
+    .lb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .lb-card { border: 1px solid #e2e0d8; border-radius: 8px; overflow: hidden; }
+    .lb-title { padding: 10px 14px; background: #f5f4f0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #6b6860; }
+    .lb-inner { display: grid; grid-template-columns: 1fr 1fr; }
+    .lb-sub { padding: 8px 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    table { width: 100%; border-collapse: collapse; }
+    @media print { body { padding: 20px; } }
+  </style></head><body>
+  <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#9b9890;margin-bottom:4px;">LISPL</div>
+  <h1>Summary Report</h1>
+  <div class="meta">${dateLabel} &nbsp;·&nbsp; ${shiftLabel} &nbsp;·&nbsp; Generated ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-l">Total</div><div class="stat-v">${trips.length}</div></div>
+    <div class="stat"><div class="stat-l">Coal</div><div class="stat-v" style="color:#2d2d2d;">${coal}</div></div>
+    <div class="stat"><div class="stat-l">Soft OB</div><div class="stat-v" style="color:#e8a020;">${softob}</div></div>
+    <div class="stat"><div class="stat-l">Hard OB</div><div class="stat-v" style="color:#c0392b;">${hardob}</div></div>
+    <div class="stat"><div class="stat-l">Rehandling</div><div class="stat-v" style="color:#2980b9;">${rehandling}</div></div>
+  </div>
+  <div class="lb-grid">
+    <div class="lb-card">
+      <div class="lb-title">Drivers</div>
+      <div class="lb-inner">
+        <div style="border-right:1px solid #e2e0d8;">
+          <div class="lb-sub" style="color:#27ae60;">🏆 Top 5</div>
+          <table>${lbTableRows(driversSorted, false)}</table>
+        </div>
+        <div>
+          <div class="lb-sub" style="color:#c0392b;">⚠ Bottom 5</div>
+          <table>${lbTableRows([...driversSorted].reverse(), true)}</table>
+        </div>
+      </div>
+    </div>
+    <div class="lb-card">
+      <div class="lb-title">Vehicles</div>
+      <div class="lb-inner">
+        <div style="border-right:1px solid #e2e0d8;">
+          <div class="lb-sub" style="color:#27ae60;">🏆 Top 5</div>
+          <table>${lbTableRows(vehSorted, false)}</table>
+        </div>
+        <div>
+          <div class="lb-sub" style="color:#c0392b;">⚠ Bottom 5</div>
+          <table>${lbTableRows([...vehSorted].reverse(), true)}</table>
+        </div>
+      </div>
+    </div>
+  </div>
+  ${hierarchyHtml}
+  <scr` + `ipt>window.onload=()=>{ window.print(); }</scr` + `ipt>
+  </body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (!win) showToast('Allow popups to download PDF');
+}
+// ─── END SUMMARY REPORT ────────────────────────────────────────────
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+
+let activeDash = null;
+let rawDataVisible = false;
+
+// Per-day breakdown alert
+function checkBreakdownAlerts(trips) {
+  const byDateShift = {};
+  trips.forEach(t => {
+    const date = t.mining_date || (t.timestamp ? t.timestamp.split('T')[0] : 'Unknown');
+    const shift = t.shift || '?';
+    const k = `${date}||${shift}`;
+    if (!byDateShift[k]) byDateShift[k] = { date, shift, drivers: {} };
+    const name = getDriverName(t.driver_id);
+    if (!name || name === '—') return;
+    if (!byDateShift[k].drivers[name]) byDateShift[k].drivers[name] = new Set();
+    const veh = getVehicleNum(t.vehicle_id);
+    if (veh && veh !== '—') byDateShift[k].drivers[name].add(veh);
+  });
+  const alerts = [];
+  Object.values(byDateShift).forEach(({ date, shift, drivers }) => {
+    Object.entries(drivers).forEach(([name, trucks]) => {
+      if (trucks.size > 2) alerts.push({ name, trucks: [...trucks], date, shift });
+    });
+  });
+  return alerts;
+}
+
+function updateDashboard() {
+  const MATERIALS = ['Coal','Soft OB','Hard OB','Rehandling'];
+  const SHIFTS = ['A','B','C'];
+  SHIFTS.forEach(s => {
+    const tripsInShift = filteredTrips.filter(t => t.shift === s);
+    const el = document.getElementById(`dash-count-shift-${s}`);
+    if (el) el.textContent = tripsInShift.length;
+    const hasAlert = checkBreakdownAlerts(tripsInShift).length > 0;
+    const btn = document.getElementById(`dash-shift-${s}`);
+    if (btn) btn.classList.toggle('has-alert', hasAlert);
+  });
+  MATERIALS.forEach(m => {
+    const tripsInMat = filteredTrips.filter(t => t.material_type === m);
+    const el = document.getElementById(`dash-count-mat-${m}`);
+    if (el) el.textContent = tripsInMat.length;
+    const hasAlert = checkBreakdownAlerts(tripsInMat).length > 0;
+    const btn = document.getElementById(`dash-mat-${m}`);
+    if (btn) btn.classList.toggle('has-alert', hasAlert);
+  });
+  if (activeDash) renderDetailPanel(activeDash.type, activeDash.key);
+}
+
+function selectDash(type, key) {
+  document.querySelectorAll('.dash-btn').forEach(b => b.classList.remove('active'));
+  if (activeDash && activeDash.type === type && activeDash.key === key) {
+    activeDash = null; closeDetail(); return;
+  }
+  activeDash = { type, key };
+  const btnId = type === 'shift' ? `dash-shift-${key}` : `dash-mat-${key}`;
+  const btn = document.getElementById(btnId);
+  if (btn) btn.classList.add('active');
+  renderDetailPanel(type, key);
+}
+
+function closeDetail() {
+  activeDash = null;
+  document.querySelectorAll('.dash-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('detail-panel').classList.remove('visible');
+}
+
+function toggleMatFilterFromDash(mat) {
+  const chip = document.querySelector(`.filter-chip[data-val="${mat}"]`);
+  if (activeFilters.materials.has(mat)) {
+    activeFilters.materials.delete(mat);
+    if (chip) chip.classList.remove('active');
+  } else {
+    activeFilters.materials.add(mat);
+    if (chip) chip.classList.add('active');
+  }
+  applyFilters();
+}
+
+function renderDetailPanel(type, key) {
+  const panel = document.getElementById('detail-panel');
+  const title = document.getElementById('detail-title');
+  const body  = document.getElementById('detail-body');
+  panel.classList.add('visible');
+  const MATERIALS = ['Coal','Soft OB','Hard OB','Rehandling'];
+  const SHIFTS = ['A','B','C'];
+  const matColors = {
+    'Coal':       { bg:'#f0f0f0', color:'#2d2d2d' },
+    'Soft OB':    { bg:'#fef6e7', color:'#7a5000' },
+    'Hard OB':    { bg:'#fdecea', color:'#8b1a1a' },
+    'Rehandling': { bg:'#e8f4fb', color:'#1a4a6b' }
+  };
+  const shiftColors = { A:'#27ae60', B:'#8e44ad', C:'#e67e22' };
+
+  if (type === 'shift') {
+    const shiftTrips = filteredTrips.filter(t => t.shift === key);
+    title.textContent = `Shift ${key} — Details`;
+    const matCounts = {};
+    MATERIALS.forEach(m => matCounts[m] = shiftTrips.filter(t => t.material_type === m).length);
+    const uniqueDriverIds = new Set(shiftTrips.map(t=>t.driver_id).filter(Boolean));
+    const uniqueTruckIds  = new Set(shiftTrips.map(t=>t.vehicle_id).filter(Boolean));
+    const alerts = checkBreakdownAlerts(shiftTrips);
+    let alertHtml = '';
+    if (alerts.length > 0) {
+      alertHtml = `<div class="detail-alert"><span class="detail-alert-icon">⚠</span>
+        <div><strong>Possible truck breakdown detected (driver switched trucks mid-day)</strong><br>
+        ${alerts.map(a=>`<span style="font-weight:600">${a.name}</span> drove ${a.trucks.join(', ')} — <span style="font-family:var(--font-mono);font-size:11px;">${a.date}</span> Shift ${a.shift}`).join('<br>')}
+        </div></div>`;
+    }
+    const matHtml = MATERIALS.map(m => {
+      const c = matColors[m];
+      const isActive = activeFilters.materials.has(m);
+      const outline = isActive ? `box-shadow:0 0 0 2px ${c.color};` : '';
+      return `<div class="detail-mat-chip" style="background:${c.bg};color:${c.color};cursor:pointer;${outline}transition:box-shadow 0.15s;"
+        onclick="toggleMatFilterFromDash('${m}')" title="Click to filter by ${m}">
+        <span style="width:8px;height:8px;border-radius:50%;background:${c.color};display:inline-block;flex-shrink:0;"></span>
+        ${m}: <strong style="margin-left:4px;font-family:var(--font-mono);">${matCounts[m]}</strong>
+        ${isActive ? '<span style="margin-left:4px;font-size:10px;">✓</span>' : ''}
+      </div>`;
+    }).join('');
+    body.innerHTML = `
+      <div class="detail-kpi-row">
+        <div class="detail-kpi"><div class="detail-kpi-label">Total Trips</div><div class="detail-kpi-val">${shiftTrips.length}</div></div>
+        <div class="detail-kpi"><div class="detail-kpi-label">Unique Drivers</div>
+          <div class="detail-kpi-val"><span class="drivers-link" onclick="openDriverModal('shift','${key}',null)">${uniqueDriverIds.size}</span></div></div>
+        <div class="detail-kpi"><div class="detail-kpi-label">Unique Trucks</div>
+          <div class="detail-kpi-val"><span class="drivers-link" onclick="openTruckModal('shift','${key}',null)">${uniqueTruckIds.size}</span></div></div>
+      </div>
+      ${alertHtml}
+      <div class="detail-sub-title">Material Breakdown <span style="font-size:10px;font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0;">(click to filter)</span></div>
+      <div class="detail-mat-row">${matHtml}</div>`;
+
+  } else if (type === 'material') {
+    const matTrips = filteredTrips.filter(t => t.material_type === key);
+    title.textContent = `${key} — Details`;
+    let shiftsHtml = '';
+    SHIFTS.forEach(s => {
+      const sTrips = matTrips.filter(t => t.shift === s);
+      if (sTrips.length === 0) return;
+      const uDrivers = new Set(sTrips.map(t=>t.driver_id).filter(Boolean));
+      const uTrucks  = new Set(sTrips.map(t=>t.vehicle_id).filter(Boolean));
+      const alerts = checkBreakdownAlerts(sTrips);
+      let alertHtml = '';
+      if (alerts.length > 0) {
+        alertHtml = `<div class="detail-alert" style="margin-top:8px;"><span class="detail-alert-icon">⚠</span>
+          <div><strong>Possible truck breakdown detected</strong><br>
+          ${alerts.map(a=>`<span style="font-weight:600">${a.name}</span> drove ${a.trucks.join(', ')} — <span style="font-family:var(--font-mono);font-size:11px;">${a.date}</span> Shift ${a.shift}`).join('<br>')}
+          </div></div>`;
+      }
+      shiftsHtml += `<div class="detail-shift-block">
+        <div class="detail-shift-header">
+          <span style="color:${shiftColors[s]}">Shift ${s}</span>
+          <span style="font-family:var(--font-mono);font-size:13px;color:var(--text-muted);">${sTrips.length} trips</span>
+        </div>
+        <div class="detail-shift-body">
+          <div class="detail-shift-kpis">
+            <div class="detail-shift-kpi">Drivers: <strong class="drivers-link" onclick="openDriverModal('material','${s}','${key}')">${uDrivers.size}</strong></div>
+            <div class="detail-shift-kpi">Trucks: <strong class="drivers-link" onclick="openTruckModal('material','${s}','${key}')">${uTrucks.size}</strong></div>
+          </div>
+          ${alertHtml}
+        </div>
+      </div>`;
+    });
+    body.innerHTML = `
+      <div class="detail-kpi-row">
+        <div class="detail-kpi"><div class="detail-kpi-label">Total Trips</div><div class="detail-kpi-val">${matTrips.length}</div></div>
+      </div>
+      <div class="detail-sub-title">Breakdown by Shift</div>
+      ${shiftsHtml || '<div style="color:var(--text-muted);font-size:13px;">No trips</div>'}`;
+  }
+}
+
+// ─── DRIVER MODAL ─────────────────────────────────────────────────────────────
+
+function openDriverModal(context, shiftOrKey, matKey) {
+  let trips, modalTitle;
+  if (context === 'shift' && !matKey) {
+    trips = filteredTrips.filter(t => t.shift === shiftOrKey);
+    modalTitle = `Shift ${shiftOrKey} — Drivers`;
+  } else if (context === 'material') {
+    trips = filteredTrips.filter(t => t.shift === shiftOrKey && t.material_type === matKey);
+    modalTitle = `Shift ${shiftOrKey} · ${matKey} — Drivers`;
+  } else {
+    trips = filteredTrips; modalTitle = 'All Drivers';
+  }
+  const driverMap = {};
+  trips.forEach(t => {
+    const id = t.driver_id; if (!id) return;
+    if (!driverMap[id]) driverMap[id] = { trips: [], name: getDriverName(id), trucks: new Set() };
+    driverMap[id].trips.push(t);
+    const veh = getVehicleNum(t.vehicle_id);
+    if (veh && veh !== '—') driverMap[id].trucks.add(veh);
+  });
+  const drivers = Object.values(driverMap).map(d => {
+    const ts = d.trips.map(t => new Date(t.timestamp)).filter(x=>!isNaN(x)).sort((a,b)=>a-b);
+    let timeStr = '—';
+    if (ts.length >= 2) {
+      const diff = ts[ts.length-1] - ts[0];
+      const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000);
+      timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+    }
+    return { id: Object.keys(driverMap).find(k => driverMap[k].name === d.name), name: d.name, trips: d.trips.length, time: timeStr, trucks: [...d.trucks], rawTrips: d.trips };
+  }).sort((a,b) => b.trips - a.trips);
+
+  document.getElementById('driver-modal-title').textContent = modalTitle;
+  document.getElementById('driver-modal-body').innerHTML = drivers.length === 0
+    ? '<div style="padding:20px;color:var(--text-muted);text-align:center;">No drivers found</div>'
+    : drivers.map((d,i) => {
+        const truckChips = d.trucks.map(tr =>
+          `<span class="entity-link" style="font-size:10px;background:var(--accent-light);padding:2px 7px;border-radius:10px;font-family:var(--font-mono);text-decoration:none;"
+            onclick="openDrillByTruck('${tr}',event)">${tr}</span>`
+        ).join(' ');
+        return `<div class="driver-row" style="flex-wrap:wrap;">
+          <span class="driver-row-num">${i+1}</span>
+          <span class="driver-row-name">
+            <span class="entity-link" onclick="openDrillByDriverName('${d.name.replace(/'/g,"\\'")}',event)">${d.name}</span>
+            <br><span style="font-size:11px;color:var(--text-muted);font-weight:400;">Trucks: </span>${truckChips||'<span style="font-size:11px;color:var(--text-muted);">—</span>'}
+          </span>
+          <span class="driver-row-trips">${d.trips} trips</span>
+          <span class="driver-row-time">${d.time}</span>
+        </div>`;
+      }).join('');
+  document.getElementById('driver-modal').classList.add('open');
+}
+
+function closeDriverModal() { document.getElementById('driver-modal').classList.remove('open'); }
+document.getElementById('driver-modal').addEventListener('click', function(e) { if (e.target===this) closeDriverModal(); });
+
+// ─── TRUCK MODAL ──────────────────────────────────────────────────────────────
+
+function openTruckModal(context, shiftOrKey, matKey) {
+  let trips, modalTitle;
+  if (context === 'shift' && !matKey) {
+    trips = filteredTrips.filter(t => t.shift === shiftOrKey);
+    modalTitle = `Shift ${shiftOrKey} — Trucks`;
+  } else if (context === 'material') {
+    trips = filteredTrips.filter(t => t.shift === shiftOrKey && t.material_type === matKey);
+    modalTitle = `Shift ${shiftOrKey} · ${matKey} — Trucks`;
+  } else {
+    trips = filteredTrips; modalTitle = 'All Trucks';
+  }
+  const truckMap = {};
+  trips.forEach(t => {
+    const id = t.vehicle_id; if (!id) return;
+    const num = getVehicleNum(id); if (!num || num === '—') return;
+    if (!truckMap[num]) truckMap[num] = { trips: [], drivers: new Set() };
+    truckMap[num].trips.push(t);
+    const drv = getDriverName(t.driver_id);
+    if (drv && drv !== '—') truckMap[num].drivers.add(drv);
+  });
+  const trucks = Object.entries(truckMap).map(([num, d]) => {
+    const ts = d.trips.map(t => new Date(t.timestamp)).filter(x=>!isNaN(x)).sort((a,b)=>a-b);
+    let timeStr = '—';
+    if (ts.length >= 2) {
+      const diff = ts[ts.length-1] - ts[0];
+      const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000);
+      timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+    }
+    return { num, trips: d.trips.length, time: timeStr, drivers: [...d.drivers] };
+  }).sort((a,b) => b.trips - a.trips);
+
+  document.getElementById('truck-modal-title').textContent = modalTitle;
+  document.getElementById('truck-modal-body').innerHTML = trucks.length === 0
+    ? '<div style="padding:20px;color:var(--text-muted);text-align:center;">No trucks found</div>'
+    : trucks.map((tr,i) => {
+        const driverChips = tr.drivers.map(drv =>
+          `<span class="entity-link" style="font-size:10px;background:#eafaf1;color:#1e8449;padding:2px 7px;border-radius:10px;text-decoration:none;"
+            onclick="openDrillByDriverName('${drv.replace(/'/g,"\\'")}',event)">${drv}</span>`
+        ).join(' ');
+        return `<div class="driver-row" style="flex-wrap:wrap;">
+          <span class="driver-row-num">${i+1}</span>
+          <span class="driver-row-name" style="font-family:var(--font-mono);">
+            <span class="entity-link" onclick="openDrillByTruck('${tr.num}',event)">${tr.num}</span>
+            <br><span style="font-size:11px;color:var(--text-muted);font-weight:400;font-family:var(--font-main);">Drivers: </span>${driverChips||'<span style="font-size:11px;color:var(--text-muted);">—</span>'}
+          </span>
+          <span class="driver-row-trips">${tr.trips} trips</span>
+          <span class="driver-row-time">${tr.time}</span>
+        </div>`;
+      }).join('');
+  document.getElementById('truck-modal').classList.add('open');
+}
+
+function closeTruckModal() { document.getElementById('truck-modal').classList.remove('open'); }
+document.getElementById('truck-modal').addEventListener('click', function(e) { if (e.target===this) closeTruckModal(); });
+
+// ─── DRILL-DOWN RAW DATA MODAL ────────────────────────────────────────────────
+
+function openDrillByDriverName(driverName, e) {
+  if (e) e.stopPropagation();
+  const trips = filteredTrips.filter(t => getDriverName(t.driver_id) === driverName);
+  openDrillModal(`Driver: ${driverName}`, `${trips.length} trips in selected period`, trips);
+}
+
+function openDrillByTruck(truckNum, e) {
+  if (e) e.stopPropagation();
+  const trips = filteredTrips.filter(t => getVehicleNum(t.vehicle_id) === truckNum);
+  openDrillModal(`Truck: ${truckNum}`, `${trips.length} trips in selected period`, trips);
+}
+
+function openDrillModal(title, meta, trips) {
+  document.getElementById('drill-modal-title').textContent = title;
+  document.getElementById('drill-modal-meta').textContent = meta;
+  const sorted = [...trips].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+  document.getElementById('drill-tbody').innerHTML = sorted.length === 0
+    ? '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No trips found</td></tr>'
+    : sorted.map((t,i) => `<tr>
+        <td class="td-num" style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);">${i+1}</td>
+        <td style="font-size:12px;color:var(--text-secondary);">${fmtDate(t.timestamp)}</td>
+        <td style="font-weight:500;">
+          <span class="entity-link" onclick="openDrillByTruck('${getVehicleNum(t.vehicle_id)}',event)">${getVehicleNum(t.vehicle_id)}</span>
+        </td>
+        <td style="font-family:var(--font-mono);font-size:12px;">${getVehiclePlate(t.vehicle_id)}</td>
+        <td>${matBadge(t.material_type)}</td>
+        <td>${shiftBadge(t.shift)}</td>
+        <td><span class="entity-link" onclick="openDrillByDriverName('${getDriverName(t.driver_id).replace(/'/g,"\\'")}',event)">${getDriverName(t.driver_id)}</span></td>
+        <td style="color:var(--text-secondary);">${getWorkerName(t.worker_id)}</td>
+      </tr>`).join('');
+  // close any open sub-modals first
+  closeDriverModal(); closeTruckModal();
+  document.getElementById('drill-modal').classList.add('open');
+}
+
+function closeDrillModal() { document.getElementById('drill-modal').classList.remove('open'); }
+document.getElementById('drill-modal').addEventListener('click', function(e) { if (e.target===this) closeDrillModal(); });
+
+// Also make names in the raw data table + leaderboards clickable - applied via event delegation on tbody
+document.addEventListener('click', function(e) {
+  // handled inline via entity-link onclick
+});
+
+// ─── RAW DATA TOGGLE ──────────────────────────────────────────────────────────
+
+function toggleRawData() {
+  rawDataVisible = !rawDataVisible;
+  document.getElementById('raw-data-section').classList.toggle('visible', rawDataVisible);
+  document.getElementById('raw-data-toggle-btn').classList.toggle('active', rawDataVisible);
+  if (rawDataVisible) renderTable();
+}
+
+// ─── CUTOFF TIME SCREEN ───────────────────────────────────────────────────────
+
+let cutoffFilter = 'all';
+
+// cutoffThresholds[shift][material] = minutes
+const cutoffThresholds = {
+  A: { 'Coal': 25, 'Soft OB': 25, 'Hard OB': 25, 'Rehandling': 25 },
+  B: { 'Coal': 25, 'Soft OB': 25, 'Hard OB': 25, 'Rehandling': 25 },
+  C: { 'Coal': 25, 'Soft OB': 25, 'Hard OB': 25, 'Rehandling': 25 }
+};
+const CUTOFF_MATERIALS = ['Coal','Soft OB','Hard OB','Rehandling'];
+const CUTOFF_SHIFTS = ['A','B','C'];
+
+function buildCutoffGrid() {
+  const tbody = document.getElementById('cutoff-grid-body');
+  if (!tbody) return;
+  tbody.innerHTML = CUTOFF_MATERIALS.map(m => `
+    <tr>
+      <td>${m}</td>
+      ${CUTOFF_SHIFTS.map(s => `
+        <td><input type="number" class="cutoff-cell-input"
+          id="ct-${s}-${m.replace(/ /g,'_')}"
+          value="${cutoffThresholds[s][m]}" min="1" max="120"
+          onchange="updateThreshold('${s}','${m}',this.value)" /></td>
+      `).join('')}
+    </tr>`).join('');
+}
+
+function updateThreshold(shift, mat, val) {
+  cutoffThresholds[shift][mat] = parseInt(val) || 25;
+  renderCutoffTable();
+}
+
+function setAllCutoffs() {
+  const val = parseInt(document.getElementById('cutoff-set-all-val').value) || 25;
+  CUTOFF_SHIFTS.forEach(s => {
+    CUTOFF_MATERIALS.forEach(m => {
+      cutoffThresholds[s][m] = val;
+      const el = document.getElementById(`ct-${s}-${m.replace(/ /g,'_')}`);
+      if (el) el.value = val;
+    });
+  });
+  renderCutoffTable();
+}
+
+function getShiftEndTime(shift, miningDate) {
+  const [y, mo, d] = miningDate.split('-').map(Number);
+  if (shift === 'A') return new Date(y, mo-1, d, 14, 0, 0);
+  if (shift === 'B') return new Date(y, mo-1, d, 22, 0, 0);
+  if (shift === 'C') return new Date(y, mo-1, d+1, 6, 0, 0);
+  return null;
+}
+
+function openCutoffPage() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('cutoff-page').style.display = 'block';
+  document.getElementById('cutoff-date-label').textContent = getDateRangeLabel();
+  cutoffFilter = 'all';
+  buildCutoffGrid();
+  renderCutoffTable();
+  setCutoffFilterStyle();
+}
+
+function closeCutoffPage() {
+  document.getElementById('cutoff-page').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+function setCutoffFilter(f) {
+  cutoffFilter = f;
+  setCutoffFilterStyle();
+  renderCutoffTable();
+}
+
+function setCutoffFilterStyle() {
+  ['all','warn','ok'].forEach(x => {
+    const btn = document.getElementById(`cutoff-filter-${x}`);
+    if (btn) btn.classList.toggle('primary', x === cutoffFilter);
+  });
+}
+
+function renderCutoffTable() {
+  // Build: driver × date × shift → last trip, using per-material-per-shift threshold of last material driven
+  const groupMap = {};
+  filteredTrips.forEach(t => {
+    const date = t.mining_date || (t.timestamp ? t.timestamp.split('T')[0] : null);
+    if (!date || !t.shift || !t.driver_id || !t.timestamp) return;
+    const k = `${date}||${t.shift}||${t.driver_id}`;
+    const ts = new Date(t.timestamp);
+    if (isNaN(ts)) return;
+    if (!groupMap[k] || ts > groupMap[k].lastTs) {
+      groupMap[k] = {
+        date, shift: t.shift, driverId: t.driver_id,
+        lastTs: ts,
+        lastMat: t.material_type,
+        lastVehicleId: t.vehicle_id
+      };
+    }
+  });
+
+  const rows = Object.values(groupMap).map(g => {
+    const shiftEnd = getShiftEndTime(g.shift, g.date);
+    if (!shiftEnd) return null;
+    const mat = g.lastMat || 'Coal';
+    const threshold = (cutoffThresholds[g.shift] && cutoffThresholds[g.shift][mat]) || 25;
+    const minsBeforeEnd = Math.round((shiftEnd - g.lastTs) / 60000);
+    const early = minsBeforeEnd > threshold;
+    return {
+      date: g.date, shift: g.shift,
+      driver: getDriverName(g.driverId),
+      truck: getVehicleNum(g.lastVehicleId),
+      mat,
+      lastTs: g.lastTs, shiftEnd,
+      minsBeforeEnd, threshold, early
+    };
+  }).filter(Boolean).sort((a,b) => {
+    if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+    const so = {A:0,B:1,C:2};
+    if (a.shift !== b.shift) return (so[a.shift]||0) - (so[b.shift]||0);
+    return b.minsBeforeEnd - a.minsBeforeEnd;
+  });
+
+  const totalWarn = rows.filter(r=>r.early).length;
+  const totalOk   = rows.filter(r=>!r.early).length;
+  document.getElementById('cutoff-summary-chips').innerHTML = `
+    <span class="cutoff-chip cutoff-chip-total">Total: ${rows.length}</span>
+    <span class="cutoff-chip cutoff-chip-warn">⚠ Stopped Early: ${totalWarn}</span>
+    <span class="cutoff-chip cutoff-chip-ok">✓ Completed: ${totalOk}</span>`;
+
+  const filtered = cutoffFilter === 'warn' ? rows.filter(r=>r.early)
+                 : cutoffFilter === 'ok'   ? rows.filter(r=>!r.early) : rows;
+
+  const shiftColors = { A:'#27ae60', B:'#8e44ad', C:'#e67e22' };
+  const matColors = { 'Coal':'#2d2d2d','Soft OB':'#e8a020','Hard OB':'#c0392b','Rehandling':'#2980b9' };
+
+  document.getElementById('cutoff-tbody').innerHTML = filtered.length === 0
+    ? `<tr><td colspan="9"><div class="empty-state"><p>No data</p></div></td></tr>`
+    : filtered.map(r => {
+        const lastFmt = r.lastTs.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+        const endFmt  = r.shiftEnd.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+        const minsTxt = r.minsBeforeEnd < 0 ? `+${Math.abs(r.minsBeforeEnd)} (after end)` : `${r.minsBeforeEnd} min`;
+        return `<tr>
+          <td style="font-family:var(--font-mono);font-size:12px;">${r.date}</td>
+          <td><span class="shift-badge shift-${r.shift}" style="background:${shiftColors[r.shift]}1a;color:${shiftColors[r.shift]};">Shift ${r.shift}</span></td>
+          <td style="font-weight:500;"><span class="entity-link" onclick="openDrillByDriverName('${r.driver.replace(/'/g,"\\'")}',event)">${r.driver}</span></td>
+          <td style="font-family:var(--font-mono);font-size:12px;"><span class="entity-link" onclick="openDrillByTruck('${r.truck}',event)">${r.truck}</span></td>
+          <td><span style="font-size:11px;font-weight:600;color:${matColors[r.mat]||'#555'};">${r.mat}</span></td>
+          <td style="font-family:var(--font-mono);font-size:12px;">${lastFmt}</td>
+          <td style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);">${endFmt}</td>
+          <td style="font-family:var(--font-mono);font-size:12px;${r.early?'color:#c0392b;font-weight:700;':''}">${minsTxt} <span style="font-size:10px;color:var(--text-muted);">(thr:${r.threshold})</span></td>
+          <td>${r.early?`<span class="cutoff-warn">⚠ Stopped Early</span>`:`<span class="cutoff-ok">✓ OK</span>`}</td>
+        </tr>`;
+      }).join('');
+}
+
+// ─── END DASHBOARD ────────────────────────────────────────────────────────────
+
+// ── Per-day breakdown alert (checks each mining_date independently) ──────────
+function checkBreakdownAlerts(trips) {
+  // Returns array of { driverName, trucks[], date, shift }
+  const byDateShift = {};
+  trips.forEach(t => {
+    const date = t.mining_date || (t.timestamp ? t.timestamp.split('T')[0] : 'Unknown');
+    const shift = t.shift || '?';
+    const key = `${date}||${shift}`;
+    if (!byDateShift[key]) byDateShift[key] = { date, shift, drivers: {} };
+    const name = getDriverName(t.driver_id);
+    if (!name || name === '—') return;
+    if (!byDateShift[key].drivers[name]) byDateShift[key].drivers[name] = new Set();
+    const veh = getVehicleNum(t.vehicle_id);
+    if (veh && veh !== '—') byDateShift[key].drivers[name].add(veh);
+  });
+
+  const alerts = [];
+  Object.values(byDateShift).forEach(({ date, shift, drivers }) => {
+    Object.entries(drivers).forEach(([name, trucks]) => {
+      if (trucks.size > 2) {
+        alerts.push({ name, trucks: [...trucks], date, shift });
+      }
+    });
+  });
+  return alerts;
+}
+
+function updateDashboard() {
+  const MATERIALS = ['Coal','Soft OB','Hard OB','Rehandling'];
+  const SHIFTS = ['A','B','C'];
+
+  SHIFTS.forEach(s => {
+    const tripsInShift = filteredTrips.filter(t => t.shift === s);
+    const el = document.getElementById(`dash-count-shift-${s}`);
+    if (el) el.textContent = tripsInShift.length;
+    const hasAlert = checkBreakdownAlerts(tripsInShift).length > 0;
+    const btn = document.getElementById(`dash-shift-${s}`);
+    if (btn) btn.classList.toggle('has-alert', hasAlert);
+  });
+
+  MATERIALS.forEach(m => {
+    const tripsInMat = filteredTrips.filter(t => t.material_type === m);
+    const el = document.getElementById(`dash-count-mat-${m}`);
+    if (el) el.textContent = tripsInMat.length;
+    const hasAlert = checkBreakdownAlerts(tripsInMat).length > 0;
+    const btn = document.getElementById(`dash-mat-${m}`);
+    if (btn) btn.classList.toggle('has-alert', hasAlert);
+  });
+
+  if (activeDash) renderDetailPanel(activeDash.type, activeDash.key);
+}
+
+function selectDash(type, key) {
+  document.querySelectorAll('.dash-btn').forEach(b => b.classList.remove('active'));
+  if (activeDash && activeDash.type === type && activeDash.key === key) {
+    activeDash = null;
+    closeDetail();
+    return;
+  }
+  activeDash = { type, key };
+  const btnId = type === 'shift' ? `dash-shift-${key}` : `dash-mat-${key}`;
+  const btn = document.getElementById(btnId);
+  if (btn) btn.classList.add('active');
+  renderDetailPanel(type, key);
+}
+
+function closeDetail() {
+  activeDash = null;
+  document.querySelectorAll('.dash-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('detail-panel').classList.remove('visible');
+}
+
+// Toggle material filter from detail panel chip click
+function toggleMatFilterFromDash(mat) {
+  const key = 'materials';
+  const chip = document.querySelector(`.filter-chip[data-val="${mat}"]`);
+  if (activeFilters[key].has(mat)) {
+    activeFilters[key].delete(mat);
+    if (chip) chip.classList.remove('active');
+  } else {
+    activeFilters[key].add(mat);
+    if (chip) chip.classList.add('active');
+  }
+  applyFilters();
+}
+
+function renderDetailPanel(type, key) {
+  const panel = document.getElementById('detail-panel');
+  const title = document.getElementById('detail-title');
+  const body = document.getElementById('detail-body');
+  panel.classList.add('visible');
+
+  const MATERIALS = ['Coal','Soft OB','Hard OB','Rehandling'];
+  const SHIFTS = ['A','B','C'];
+  const matColors = {
+    'Coal':       { bg:'#f0f0f0', color:'#2d2d2d', active:'#c8c8c8' },
+    'Soft OB':    { bg:'#fef6e7', color:'#7a5000', active:'#f5d08a' },
+    'Hard OB':    { bg:'#fdecea', color:'#8b1a1a', active:'#f5a8a0' },
+    'Rehandling': { bg:'#e8f4fb', color:'#1a4a6b', active:'#a8d4f0' }
+  };
+  const shiftColors = { A: '#27ae60', B: '#8e44ad', C: '#e67e22' };
+
+  if (type === 'shift') {
+    const shiftTrips = filteredTrips.filter(t => t.shift === key);
+    title.textContent = `Shift ${key} — Details`;
+
+    const matCounts = {};
+    MATERIALS.forEach(m => matCounts[m] = shiftTrips.filter(t => t.material_type === m).length);
+
+    const uniqueDriverIds = new Set(shiftTrips.map(t=>t.driver_id).filter(Boolean));
+    const uniqueTruckIds  = new Set(shiftTrips.map(t=>t.vehicle_id).filter(Boolean));
+
+    const alerts = checkBreakdownAlerts(shiftTrips);
+    let alertHtml = '';
+    if (alerts.length > 0) {
+      alertHtml = `<div class="detail-alert">
+        <span class="detail-alert-icon">⚠</span>
+        <div><strong>Possible truck breakdown detected (driver switched trucks mid-day)</strong><br>
+        ${alerts.map(a =>
+          `<span style="font-weight:600">${a.name}</span> drove ${a.trucks.join(', ')} — <span style="font-family:var(--font-mono);font-size:11px;">${a.date}</span> Shift ${a.shift}`
+        ).join('<br>')}
+        </div>
+      </div>`;
+    }
+
+    const matHtml = MATERIALS.map(m => {
+      const c = matColors[m];
+      const isActive = activeFilters.materials.has(m);
+      const outline = isActive ? `box-shadow:0 0 0 2px ${c.color};` : '';
+      return `<div class="detail-mat-chip" style="background:${c.bg};color:${c.color};cursor:pointer;${outline}transition:box-shadow 0.15s;"
+        onclick="toggleMatFilterFromDash('${m}')" title="Click to filter by ${m}">
+        <span style="width:8px;height:8px;border-radius:50%;background:${c.color};display:inline-block;flex-shrink:0;"></span>
+        ${m}: <strong style="margin-left:4px;font-family:var(--font-mono);">${matCounts[m]}</strong>
+        ${isActive ? '<span style="margin-left:4px;font-size:10px;">✓</span>' : ''}
+      </div>`;
+    }).join('');
+
+    body.innerHTML = `
+      <div class="detail-kpi-row">
+        <div class="detail-kpi">
+          <div class="detail-kpi-label">Total Trips</div>
+          <div class="detail-kpi-val">${shiftTrips.length}</div>
+        </div>
+        <div class="detail-kpi">
+          <div class="detail-kpi-label">Unique Drivers</div>
+          <div class="detail-kpi-val">
+            <span class="drivers-link" onclick="openDriverModal('shift','${key}',null)">${uniqueDriverIds.size}</span>
+          </div>
+        </div>
+        <div class="detail-kpi">
+          <div class="detail-kpi-label">Unique Trucks</div>
+          <div class="detail-kpi-val">
+            <span class="drivers-link" onclick="openTruckModal('shift','${key}',null)">${uniqueTruckIds.size}</span>
+          </div>
+        </div>
+      </div>
+      ${alertHtml}
+      <div class="detail-sub-title">Material Breakdown <span style="font-size:10px;font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0;">(click to filter)</span></div>
+      <div class="detail-mat-row">${matHtml}</div>
+    `;
+
+  } else if (type === 'material') {
+    const matTrips = filteredTrips.filter(t => t.material_type === key);
+    title.textContent = `${key} — Details`;
+
+    let shiftsHtml = '';
+    SHIFTS.forEach(s => {
+      const sTrips = matTrips.filter(t => t.shift === s);
+      if (sTrips.length === 0) return;
+      const uDrivers = new Set(sTrips.map(t=>t.driver_id).filter(Boolean));
+      const uTrucks  = new Set(sTrips.map(t=>t.vehicle_id).filter(Boolean));
+      const alerts = checkBreakdownAlerts(sTrips);
+
+      let alertHtml = '';
+      if (alerts.length > 0) {
+        alertHtml = `<div class="detail-alert" style="margin-top:8px;">
+          <span class="detail-alert-icon">⚠</span>
+          <div><strong>Possible truck breakdown detected</strong><br>
+          ${alerts.map(a =>
+            `<span style="font-weight:600">${a.name}</span> drove ${a.trucks.join(', ')} — <span style="font-family:var(--font-mono);font-size:11px;">${a.date}</span> Shift ${a.shift}`
+          ).join('<br>')}
+          </div>
+        </div>`;
+      }
+
+      shiftsHtml += `
+        <div class="detail-shift-block">
+          <div class="detail-shift-header">
+            <span style="color:${shiftColors[s]}">Shift ${s}</span>
+            <span style="font-family:var(--font-mono);font-size:13px;color:var(--text-muted);">${sTrips.length} trips</span>
+          </div>
+          <div class="detail-shift-body">
+            <div class="detail-shift-kpis">
+              <div class="detail-shift-kpi">
+                Drivers: <strong class="drivers-link" onclick="openDriverModal('material','${s}','${key}')">${uDrivers.size}</strong>
+              </div>
+              <div class="detail-shift-kpi">
+                Trucks: <strong class="drivers-link" onclick="openTruckModal('material','${s}','${key}')">${uTrucks.size}</strong>
+              </div>
+            </div>
+            ${alertHtml}
+          </div>
+        </div>`;
+    });
+
+    body.innerHTML = `
+      <div class="detail-kpi-row">
+        <div class="detail-kpi">
+          <div class="detail-kpi-label">Total Trips</div>
+          <div class="detail-kpi-val">${matTrips.length}</div>
+        </div>
+      </div>
+      <div class="detail-sub-title">Breakdown by Shift</div>
+      ${shiftsHtml || '<div style="color:var(--text-muted);font-size:13px;">No trips for this material</div>'}
+    `;
+  }
+}
+
+// ─── DRIVER MODAL ─────────────────────────────────────────────────────────────
+
+function openDriverModal(context, shiftOrKey, matKey) {
+  let trips;
+  let modalTitle;
+  if (context === 'shift' && !matKey) {
+    trips = filteredTrips.filter(t => t.shift === shiftOrKey);
+    modalTitle = `Shift ${shiftOrKey} — Drivers`;
+  } else if (context === 'material') {
+    trips = filteredTrips.filter(t => t.shift === shiftOrKey && t.material_type === matKey);
+    modalTitle = `Shift ${shiftOrKey} · ${matKey} — Drivers`;
+  } else {
+    trips = filteredTrips;
+    modalTitle = 'All Drivers';
+  }
+
+  const driverMap = {};
+  trips.forEach(t => {
+    const id = t.driver_id;
+    if (!id) return;
+    if (!driverMap[id]) driverMap[id] = { trips: [], name: getDriverName(id), trucks: new Set() };
+    driverMap[id].trips.push(t);
+    const veh = getVehicleNum(t.vehicle_id);
+    if (veh && veh !== '—') driverMap[id].trucks.add(veh);
+  });
+
+  const drivers = Object.values(driverMap).map(d => {
+    const ts = d.trips.map(t => new Date(t.timestamp)).filter(x => !isNaN(x)).sort((a,b)=>a-b);
+    let timeStr = '—';
+    if (ts.length >= 2) {
+      const diffMs = ts[ts.length-1] - ts[0];
+      const hrs = Math.floor(diffMs / 3600000);
+      const mins = Math.floor((diffMs % 3600000) / 60000);
+      timeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+    }
+    return { name: d.name, trips: d.trips.length, time: timeStr, trucks: [...d.trucks] };
+  }).sort((a,b) => b.trips - a.trips);
+
+  document.getElementById('driver-modal-title').textContent = modalTitle;
+  document.getElementById('driver-modal-body').innerHTML = drivers.length === 0
+    ? '<div style="padding:20px;color:var(--text-muted);text-align:center;">No drivers found</div>'
+    : drivers.map((d,i) => {
+        const truckChips = d.trucks.map(tr =>
+          `<span style="font-size:10px;background:var(--accent-light);color:var(--accent);padding:2px 7px;border-radius:10px;font-family:var(--font-mono);">${tr}</span>`
+        ).join(' ');
+        return `<div class="driver-row" style="flex-wrap:wrap;">
+          <span class="driver-row-num">${i+1}</span>
+          <span class="driver-row-name">${d.name}<br><span style="font-size:11px;color:var(--text-muted);font-weight:400;">Trucks: </span>${truckChips || '<span style="font-size:11px;color:var(--text-muted);">—</span>'}</span>
+          <span class="driver-row-trips">${d.trips} trips</span>
+          <span class="driver-row-time">${d.time}</span>
+        </div>`;
+      }).join('');
+
+  document.getElementById('driver-modal').classList.add('open');
+}
+
+function closeDriverModal() {
+  document.getElementById('driver-modal').classList.remove('open');
+}
+document.getElementById('driver-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeDriverModal();
+});
+
+// ─── TRUCK MODAL ──────────────────────────────────────────────────────────────
+
+function openTruckModal(context, shiftOrKey, matKey) {
+  let trips;
+  let modalTitle;
+  if (context === 'shift' && !matKey) {
+    trips = filteredTrips.filter(t => t.shift === shiftOrKey);
+    modalTitle = `Shift ${shiftOrKey} — Trucks`;
+  } else if (context === 'material') {
+    trips = filteredTrips.filter(t => t.shift === shiftOrKey && t.material_type === matKey);
+    modalTitle = `Shift ${shiftOrKey} · ${matKey} — Trucks`;
+  } else {
+    trips = filteredTrips;
+    modalTitle = 'All Trucks';
+  }
+
+  const truckMap = {};
+  trips.forEach(t => {
+    const id = t.vehicle_id;
+    if (!id) return;
+    const num = getVehicleNum(id);
+    if (!num || num === '—') return;
+    if (!truckMap[num]) truckMap[num] = { trips: [], drivers: new Set() };
+    truckMap[num].trips.push(t);
+    const drv = getDriverName(t.driver_id);
+    if (drv && drv !== '—') truckMap[num].drivers.add(drv);
+  });
+
+  const trucks = Object.entries(truckMap).map(([num, d]) => {
+    const ts = d.trips.map(t => new Date(t.timestamp)).filter(x => !isNaN(x)).sort((a,b)=>a-b);
+    let timeStr = '—';
+    if (ts.length >= 2) {
+      const diffMs = ts[ts.length-1] - ts[0];
+      const hrs = Math.floor(diffMs / 3600000);
+      const mins = Math.floor((diffMs % 3600000) / 60000);
+      timeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+    }
+    return { num, trips: d.trips.length, time: timeStr, drivers: [...d.drivers] };
+  }).sort((a,b) => b.trips - a.trips);
+
+  document.getElementById('truck-modal-title').textContent = modalTitle;
+  document.getElementById('truck-modal-body').innerHTML = trucks.length === 0
+    ? '<div style="padding:20px;color:var(--text-muted);text-align:center;">No trucks found</div>'
+    : trucks.map((tr, i) => {
+        const driverChips = tr.drivers.map(drv =>
+          `<span style="font-size:10px;background:#eafaf1;color:#1e8449;padding:2px 7px;border-radius:10px;">${drv}</span>`
+        ).join(' ');
+        return `<div class="driver-row" style="flex-wrap:wrap;">
+          <span class="driver-row-num">${i+1}</span>
+          <span class="driver-row-name" style="font-family:var(--font-mono);">${tr.num}<br><span style="font-size:11px;color:var(--text-muted);font-weight:400;font-family:var(--font-main);">Drivers: </span>${driverChips || '<span style="font-size:11px;color:var(--text-muted);">—</span>'}</span>
+          <span class="driver-row-trips">${tr.trips} trips</span>
+          <span class="driver-row-time">${tr.time}</span>
+        </div>`;
+      }).join('');
+
+  document.getElementById('truck-modal').classList.add('open');
+}
+
+function closeTruckModal() {
+  document.getElementById('truck-modal').classList.remove('open');
+}
+document.getElementById('truck-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeTruckModal();
+});
+
+// ─── RAW DATA TOGGLE ──────────────────────────────────────────────────────────
+
+function toggleRawData() {
+  rawDataVisible = !rawDataVisible;
+  document.getElementById('raw-data-section').classList.toggle('visible', rawDataVisible);
+  document.getElementById('raw-data-toggle-btn').classList.toggle('active', rawDataVisible);
+  if (rawDataVisible) renderTable();
+}
+
+// ─── CUTOFF TIME SCREEN ───────────────────────────────────────────────────────
+
+let cutoffFilter = 'all'; // 'all' | 'warn' | 'ok'
+
+// Given a trip's shift and mining_date, return the shift-end as a Date object
+function getShiftEndTime(shift, miningDate) {
+  // miningDate = 'YYYY-MM-DD' = the mining day (6AM start)
+  // Shift A: ends 14:00 same day
+  // Shift B: ends 22:00 same day
+  // Shift C: ends 06:00 next calendar day
+  const [y, mo, d] = miningDate.split('-').map(Number);
+  if (shift === 'A') return new Date(y, mo-1, d, 14, 0, 0);
+  if (shift === 'B') return new Date(y, mo-1, d, 22, 0, 0);
+  if (shift === 'C') return new Date(y, mo-1, d+1, 6, 0, 0); // next calendar day
+  return null;
+}
+
+function openCutoffPage() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('cutoff-page').style.display = 'block';
+  document.getElementById('cutoff-date-label').textContent = getDateRangeLabel();
+  cutoffFilter = 'all';
+  renderCutoffTable();
+}
+
+function closeCutoffPage() {
+  document.getElementById('cutoff-page').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+function setCutoffFilter(f) {
+  cutoffFilter = f;
+  ['all','warn','ok'].forEach(x => {
+    document.getElementById(`cutoff-filter-${x}`).classList.toggle('primary', x === f);
+  });
+  renderCutoffTable();
+}
+
+function renderCutoffTable() {
+  const cutoffMins = parseInt(document.getElementById('cutoff-mins').value) || 25;
+
+  // Build: for each driver × date × shift → find last trip timestamp
+  const groupMap = {}; // key: `date||shift||driverId`
+  filteredTrips.forEach(t => {
+    const date = t.mining_date || (t.timestamp ? t.timestamp.split('T')[0] : null);
+    if (!date || !t.shift || !t.driver_id || !t.timestamp) return;
+    const k = `${date}||${t.shift}||${t.driver_id}`;
+    const ts = new Date(t.timestamp);
+    if (isNaN(ts)) return;
+    if (!groupMap[k]) groupMap[k] = { date, shift: t.shift, driverId: t.driver_id, lastTs: ts };
+    else if (ts > groupMap[k].lastTs) groupMap[k].lastTs = ts;
+  });
+
+  const rows = Object.values(groupMap).map(g => {
+    const shiftEnd = getShiftEndTime(g.shift, g.date);
+    if (!shiftEnd) return null;
+    const minsBeforeEnd = Math.round((shiftEnd - g.lastTs) / 60000);
+    const early = minsBeforeEnd > cutoffMins;
+    return {
+      date: g.date,
+      shift: g.shift,
+      driver: getDriverName(g.driverId),
+      lastTs: g.lastTs,
+      shiftEnd,
+      minsBeforeEnd,
+      early
+    };
+  }).filter(Boolean).sort((a,b) => {
+    if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+    const so = { A:0, B:1, C:2 };
+    if (a.shift !== b.shift) return (so[a.shift]||0) - (so[b.shift]||0);
+    return b.minsBeforeEnd - a.minsBeforeEnd;
+  });
+
+  const totalWarn = rows.filter(r => r.early).length;
+  const totalOk   = rows.filter(r => !r.early).length;
+  document.getElementById('cutoff-summary-chips').innerHTML = `
+    <span class="cutoff-chip cutoff-chip-total">Total: ${rows.length}</span>
+    <span class="cutoff-chip cutoff-chip-warn">⚠ Stopped Early: ${totalWarn}</span>
+    <span class="cutoff-chip cutoff-chip-ok">✓ Completed: ${totalOk}</span>
+  `;
+
+  const filtered = cutoffFilter === 'warn' ? rows.filter(r => r.early)
+                 : cutoffFilter === 'ok'   ? rows.filter(r => !r.early)
+                 : rows;
+
+  const shiftColors = { A:'#27ae60', B:'#8e44ad', C:'#e67e22' };
+
+  document.getElementById('cutoff-tbody').innerHTML = filtered.length === 0
+    ? `<tr><td colspan="7"><div class="empty-state"><p>No data to display</p></div></td></tr>`
+    : filtered.map(r => {
+        const lastTripFmt = r.lastTs.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+        const shiftEndFmt = r.shiftEnd.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+        const minsTxt = r.minsBeforeEnd < 0
+          ? `+${Math.abs(r.minsBeforeEnd)} (after end)`
+          : `${r.minsBeforeEnd} min`;
+        return `<tr>
+          <td style="font-family:var(--font-mono);font-size:12px;">${r.date}</td>
+          <td><span class="shift-badge shift-${r.shift}" style="background:${shiftColors[r.shift]}1a;color:${shiftColors[r.shift]};">Shift ${r.shift}</span></td>
+          <td style="font-weight:500;">${r.driver}</td>
+          <td style="font-family:var(--font-mono);font-size:12px;">${lastTripFmt}</td>
+          <td style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);">${shiftEndFmt}</td>
+          <td style="font-family:var(--font-mono);font-size:12px;${r.early?'color:#c0392b;font-weight:600;':''}">${minsTxt}</td>
+          <td>${r.early
+            ? `<span class="cutoff-warn">⚠ Stopped Early</span>`
+            : `<span class="cutoff-ok">✓ OK</span>`
+          }</td>
+        </tr>`;
+      }).join('');
+
+  // Update filter button states
+  setCutoffFilterStyle();
+}
+
+function setCutoffFilterStyle() {
+  ['all','warn','ok'].forEach(x => {
+    const btn = document.getElementById(`cutoff-filter-${x}`);
+    if (btn) btn.classList.toggle('primary', x === cutoffFilter);
+  });
+}
+
+// ─── END DASHBOARD ────────────────────────────────────────────────────────────
+
+function showLoading(v) {
+  document.getElementById('loading').classList.toggle('visible', v);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
