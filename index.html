@@ -2746,7 +2746,7 @@ function renderDetailPanel(type, key) {
     let alertHtml = '';
     if (alerts.length > 0) {
       alertHtml = `<div class="detail-alert"><span class="detail-alert-icon">⚠</span>
-        <div><strong>Possible truck breakdown detected (driver switched trucks mid-day)</strong><br>
+        <div><strong>Possible truck breakdown detected (driver switched trucks mid-shift)</strong><br>
         ${alerts.map(a=>`<span style="font-weight:600">${a.name}</span> drove ${a.trucks.join(', ')} — <span style="font-family:var(--font-mono);font-size:11px;">${a.date}</span> Shift ${a.shift}`).join('<br>')}
         </div></div>`;
     }
