@@ -1109,7 +1109,7 @@
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">LISPL</div>
+    <div class="login-logo">LIPL</div>
     <div class="login-title">Trip Reports<br>Dashboard</div>
     <div class="login-field">
       <label>Worker ID</label>
@@ -1559,7 +1559,7 @@
         <div style="background:var(--accent);padding:22px 26px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
             <div>
-              <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;color:rgba(255,255,255,0.55);text-transform:uppercase;margin-bottom:5px;">LISPL · Shift Handover</div>
+              <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;color:rgba(255,255,255,0.55);text-transform:uppercase;margin-bottom:5px;">LIPL · Shift Handover</div>
               <div style="font-size:22px;font-weight:700;color:#fff;" id="ho-title"></div>
               <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:4px;" id="ho-subtitle"></div>
             </div>
@@ -2084,7 +2084,7 @@ function exportCSV() {
   const lines = [];
 
   // Header block
-  lines.push('"LISPL"');
+  lines.push('"LIPL"');
   lines.push('"Trip Reports"');
   lines.push(`"Date Range:","${dateLabel}"`);
   lines.push(`"Generated On:","${generatedOn}"`);
@@ -2110,7 +2110,7 @@ function exportCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `LISPL_TripReport_${Date.now()}.csv`;
+  a.download = `LIPL_TripReport_${Date.now()}.csv`;
   a.click();
   showToast('CSV downloaded');
 }
@@ -2222,8 +2222,8 @@ function exportExcel() {
   let sheetRows = '';
   let rowIdx = 1;
 
-  // Row 1: LISPL title
-  sheetRows += `<row r="${rowIdx}" ht="22" customHeight="1">${cellS(1,'LISPL')}${[...Array(8)].map(()=>emptyS(1)).join('')}</row>\n`; rowIdx++;
+  // Row 1: LIPL title
+  sheetRows += `<row r="${rowIdx}" ht="22" customHeight="1">${cellS(1,'LIPL')}${[...Array(8)].map(()=>emptyS(1)).join('')}</row>\n`; rowIdx++;
   // Row 2: Trip Reports
   sheetRows += `<row r="${rowIdx}" ht="18">${cellS(2,'Trip Reports')}${[...Array(8)].map(()=>emptyS(2)).join('')}</row>\n`; rowIdx++;
   // Row 3: Date Range
@@ -2315,7 +2315,7 @@ function exportExcel() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `LISPL_TripReport_${Date.now()}.xlsx`;
+    a.download = `LIPL_TripReport_${Date.now()}.xlsx`;
     a.click();
     showToast('Excel downloaded');
   });
@@ -2574,7 +2574,7 @@ function downloadPdf(version) {
   }
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>LISPL Summary Report</title>
+  <title>LIPL Summary Report</title>
   <style>
     body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 32px; color: #1a1917; font-size: 13px; }
     h1 { font-size: 22px; color: #1a3a5c; margin: 0 0 4px; }
@@ -2591,7 +2591,7 @@ function downloadPdf(version) {
     table { width: 100%; border-collapse: collapse; }
     @media print { body { padding: 20px; } }
   </style></head><body>
-  <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#9b9890;margin-bottom:4px;">LISPL</div>
+  <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#9b9890;margin-bottom:4px;">LIPL</div>
   <h1>Summary Report</h1>
   <div class="meta">${dateLabel} &nbsp;·&nbsp; ${shiftLabel} &nbsp;·&nbsp; Generated ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</div>
   <div class="stats">
@@ -3314,7 +3314,7 @@ function downloadHandoverPdf() {
   const shift = handoverShift;
   const report = document.getElementById('handover-report');
   if (!report) return;
-  const filename = 'LISPL_Handover_Shift' + shift + '_' + (date || 'Unknown');
+  const filename = 'LIPL_Handover_Shift' + shift + '_' + (date || 'Unknown');
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
     <title>${filename}</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
