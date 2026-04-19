@@ -6129,14 +6129,14 @@ async function lfSaveEntry() {
     const density = parseFloat(document.getElementById(`lf-${m.key}-density`).value) || 1;
     const vol_m3  = Math.round(lfToM3(qty, unit, density) * 100) / 100;
     const cap_m3  = Math.round(lfComputeDenom(period, m.tripMat) * 100) / 100;
-    const lf      = cap_m3 > 0 ? Math.round((vol_m3 / cap_m3) * 1000) / 10 : null;
+    const lf      = cap_m3 > 0 ? Math.round((vol_m3 / cap_m3) * 1000) / 10 : 0;
     payload[m.key] = { qty, unit, density, vol_m3, cap_m3, lf };
   });
 
   // Weighted overall (by denominator weight)
   const totalCap   = LF_MATS.reduce((s, m) => s + (payload[m.key].cap_m3 || 0), 0);
   const totalVol   = LF_MATS.reduce((s, m) => s + (payload[m.key].vol_m3 || 0), 0);
-  payload.overall_lf = totalCap > 0 ? Math.round((totalVol / totalCap) * 1000) / 10 : null;
+  payload.overall_lf = totalCap > 0 ? Math.round((totalVol / totalCap) * 1000) / 10 : 0;
 
   try {
     let res;
