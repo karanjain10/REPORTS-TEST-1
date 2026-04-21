@@ -6239,7 +6239,7 @@ function lfComputeDenom(periodYYYYMM, tripMat) {
     if (ym !== periodYYYYMM) return sum;
     if (t.material_type !== tripMat) return sum;
     const v = allVehicles.find(x => x._id === t.vehicle_id);
-    return sum + (v && v.capacity_m3 ? parseFloat(v.capacity_m3) : 0);
+    return sum + (v && v.capacity_tonnes ? parseFloat(v.capacity_tonnes) : 0);
   }, 0);
 }
 
