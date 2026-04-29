@@ -3397,6 +3397,207 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
     }
+
+    /* ── HAUL DISTANCE MANAGER ───────────────────────────────────── */
+    #haul-page {
+      display: none;
+      min-height: 100vh;
+      background: var(--bg);
+    }
+
+    .haul-filter-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .haul-filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .haul-filter-field label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--text-muted);
+    }
+
+    .haul-filter-field input,
+    .haul-filter-field select {
+      height: 34px;
+      border: 1px solid var(--border-strong);
+      border-radius: 7px;
+      padding: 0 10px;
+      font-size: 13px;
+      font-family: var(--font-main);
+      color: var(--text-primary);
+      background: var(--surface);
+      outline: none;
+    }
+
+    .haul-filter-field input:focus,
+    .haul-filter-field select:focus {
+      border-color: var(--accent);
+    }
+
+    .haul-filter-clear {
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: underline;
+      padding-bottom: 8px;
+    }
+
+    .haul-filter-clear:hover {
+      color: var(--text-secondary);
+    }
+
+    /* inline edit controls inside the table */
+    .haul-dist-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .haul-dist-val {
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .haul-dist-val.not-set {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .haul-edit-wrap {
+      display: none;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .haul-edit-wrap.active {
+      display: flex;
+    }
+
+    .haul-num-input {
+      width: 80px;
+      height: 30px;
+      border: 1.5px solid var(--accent);
+      border-radius: 6px;
+      padding: 0 8px;
+      font-size: 13px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--accent);
+      outline: none;
+      background: var(--surface);
+    }
+
+    .haul-save-btn {
+      height: 28px;
+      padding: 0 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-main);
+      transition: opacity 0.15s;
+    }
+
+    .haul-save-btn:hover {
+      opacity: 0.85;
+    }
+
+    .haul-save-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .haul-cancel-btn {
+      height: 28px;
+      padding: 0 10px;
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font-main);
+      transition: all 0.15s;
+    }
+
+    .haul-cancel-btn:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    .haul-edit-btn {
+      height: 28px;
+      padding: 0 12px;
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-family: var(--font-main);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .haul-edit-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .haul-summary-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .haul-kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      min-width: 130px;
+    }
+
+    .haul-kpi-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .haul-kpi-val {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    [data-theme="dark"] .haul-num-input {
+      background: var(--surface);
+    }
   </style>
 </head>
 
@@ -3440,6 +3641,8 @@
           Report</button>
         <button class="action-btn" onclick="openTruckReportPage()" style="height:30px;font-size:12px;">🚛 Truck
           Report</button>
+        <button class="action-btn" onclick="openHaulPage()" style="height:30px;font-size:12px;">📍 Haul
+          Distance</button>
         <button class="action-btn" id="manual-trip-btn" onclick="openManualTripPage()"
           style="height:30px;font-size:12px;display:none;background:#1a3a5c;color:#fff;border-color:#1a3a5c;">✏ Manual
           Entry</button>
@@ -4684,6 +4887,93 @@
   </div>
 
   <!-- MANUAL TRIP ENTRY PAGE -->
+  <!-- HAUL DISTANCE MANAGER PAGE -->
+  <div id="haul-page">
+    <div class="topbar">
+      <button class="action-btn" onclick="closeHaulPage()" style="margin-right:8px;">← Back</button>
+      <div class="topbar-title">📍 Haul Distance Manager</div>
+      <div class="topbar-user">
+        <button class="action-btn" onclick="haulLoad()" style="height:30px;font-size:12px;">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div style="padding:24px;max-width:1100px;margin:0 auto;">
+
+      <!-- SUMMARY KPIs -->
+      <div class="haul-summary-bar" id="haul-kpi-bar">
+        <div class="haul-kpi">
+          <div class="haul-kpi-label">Total Assignments</div>
+          <div class="haul-kpi-val" id="haul-kpi-total">—</div>
+        </div>
+        <div class="haul-kpi">
+          <div class="haul-kpi-label">Distance Set</div>
+          <div class="haul-kpi-val" id="haul-kpi-set" style="color:#27ae60;">—</div>
+        </div>
+        <div class="haul-kpi">
+          <div class="haul-kpi-label">Not Set</div>
+          <div class="haul-kpi-val" id="haul-kpi-unset" style="color:var(--hardob);">—</div>
+        </div>
+        <div class="haul-kpi">
+          <div class="haul-kpi-label">Avg Distance (km)</div>
+          <div class="haul-kpi-val" id="haul-kpi-avg">—</div>
+        </div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="haul-filter-bar">
+        <div class="haul-filter-field">
+          <label>Date</label>
+          <input type="date" id="haul-filter-date" oninput="haulApplyFilters()" />
+        </div>
+        <div class="haul-filter-field">
+          <label>Shift</label>
+          <select id="haul-filter-shift" onchange="haulApplyFilters()">
+            <option value="">All Shifts</option>
+            <option value="A">Shift A</option>
+            <option value="B">Shift B</option>
+            <option value="C">Shift C</option>
+          </select>
+        </div>
+        <div class="haul-filter-field">
+          <label>Machine ID</label>
+          <input type="text" id="haul-filter-machine" placeholder="Filter…" oninput="haulApplyFilters()"
+            style="width:160px;" />
+        </div>
+        <span class="haul-filter-clear" onclick="haulClearFilters()">Clear filters</span>
+        <div style="margin-left:auto;font-size:13px;color:var(--text-secondary);padding-bottom:6px;"
+          id="haul-count-label"></div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table id="haul-table">
+            <thead>
+              <tr>
+                <th onclick="haulSort('mining_date')" style="cursor:pointer;">Date <span id="haul-sort-date"></span>
+                </th>
+                <th onclick="haulSort('shift')" style="cursor:pointer;">Shift <span id="haul-sort-shift"></span></th>
+                <th onclick="haulSort('machine_id')" style="cursor:pointer;">Machine ID <span
+                    id="haul-sort-machine"></span></th>
+                <th onclick="haulSort('location')" style="cursor:pointer;">Location <span
+                    id="haul-sort-location"></span></th>
+                <th onclick="haulSort('distance_km')" style="cursor:pointer;">Haul Distance (km) <span
+                    id="haul-sort-dist"></span></th>
+                <th style="width:80px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="haul-tbody">
+              <tr>
+                <td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">Loading…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <div id="manual-trip-page" style="display:none;min-height:100vh;background:var(--bg);">
     <div class="topbar">
       <button class="action-btn" onclick="closeManualTripPage()" style="margin-right:8px;">← Back</button>
@@ -10502,6 +10792,240 @@
         });
       });
     }
+
+    // ─── HAUL DISTANCE MANAGER ────────────────────────────────────────────────
+    let _haulAll = [];        // all assignments from API
+    let _haulFiltered = [];   // after filter
+    let _haulSortField = 'mining_date';
+    let _haulSortDir = -1;    // -1 = desc
+
+    function openHaulPage() {
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('haul-page').style.display = 'block';
+      haulLoad();
+    }
+
+    function closeHaulPage() {
+      document.getElementById('haul-page').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+    }
+
+    async function haulLoad() {
+      const tbody = document.getElementById('haul-tbody');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">Loading…</td></tr>';
+      try {
+        const res = await fetch(`${API}/machine-shift-assignments`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const raw = await res.json();
+        _haulAll = Array.isArray(raw) ? raw : (raw.assignments || []);
+        // default sort: date desc
+        _haulSortField = 'mining_date';
+        _haulSortDir = -1;
+        haulApplyFilters();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">Failed to load: ${e.message}</td></tr>`;
+      }
+    }
+
+    function haulApplyFilters() {
+      const dateVal = (document.getElementById('haul-filter-date').value || '').trim();
+      const shiftVal = (document.getElementById('haul-filter-shift').value || '').trim();
+      const machineVal = (document.getElementById('haul-filter-machine').value || '').trim().toLowerCase();
+
+      _haulFiltered = _haulAll.filter(a => {
+        if (dateVal && (a.mining_date || '').slice(0, 10) !== dateVal) return false;
+        if (shiftVal && a.shift !== shiftVal) return false;
+        if (machineVal && !(a.machine_id || '').toLowerCase().includes(machineVal)) return false;
+        return true;
+      });
+
+      haulDoSort();
+      haulUpdateKpis();
+      haulRender();
+    }
+
+    function haulClearFilters() {
+      document.getElementById('haul-filter-date').value = '';
+      document.getElementById('haul-filter-shift').value = '';
+      document.getElementById('haul-filter-machine').value = '';
+      haulApplyFilters();
+    }
+
+    function haulSort(field) {
+      const fieldToSpanId = {
+        mining_date: 'haul-sort-date',
+        shift: 'haul-sort-shift',
+        machine_id: 'haul-sort-machine',
+        location: 'haul-sort-location',
+        distance_km: 'haul-sort-dist'
+      };
+      if (_haulSortField === field) {
+        _haulSortDir *= -1;
+      } else {
+        _haulSortField = field;
+        _haulSortDir = field === 'mining_date' ? -1 : 1;
+      }
+      // Reset all sort indicators
+      Object.values(fieldToSpanId).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '';
+      });
+      const activeSpan = document.getElementById(fieldToSpanId[field]);
+      if (activeSpan) activeSpan.textContent = _haulSortDir === 1 ? ' ↑' : ' ↓';
+      haulDoSort();
+      haulRender();
+    }
+
+    function haulDoSort() {
+      _haulFiltered.sort((a, b) => {
+        let va = a[_haulSortField];
+        let vb = b[_haulSortField];
+        if (va == null) va = '';
+        if (vb == null) vb = '';
+        if (typeof va === 'number' && typeof vb === 'number') {
+          return _haulSortDir * (va - vb);
+        }
+        return _haulSortDir * String(va).localeCompare(String(vb), undefined, { numeric: true });
+      });
+    }
+
+    function haulUpdateKpis() {
+      const total = _haulFiltered.length;
+      const setRows = _haulFiltered.filter(a => a.distance_km != null);
+      const unset = total - setRows.length;
+      const avg = setRows.length
+        ? (setRows.reduce((s, a) => s + a.distance_km, 0) / setRows.length).toFixed(1)
+        : '—';
+      document.getElementById('haul-kpi-total').textContent = total;
+      document.getElementById('haul-kpi-set').textContent = setRows.length;
+      document.getElementById('haul-kpi-unset').textContent = unset;
+      document.getElementById('haul-kpi-avg').textContent = avg;
+      document.getElementById('haul-count-label').textContent =
+        `Showing ${total} assignment${total !== 1 ? 's' : ''}`;
+    }
+
+    function haulRender() {
+      const tbody = document.getElementById('haul-tbody');
+      if (!_haulFiltered.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:48px 20px;color:var(--text-muted);">No assignments found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = _haulFiltered.map((a, idx) => {
+        const id = a._id;
+        const date = a.mining_date ? a.mining_date.slice(0, 10) : '—';
+        const shift = a.shift || '—';
+        const machine = a.machine_id || '—';
+        const location = a.location || '—';
+        const dist = a.distance_km;
+        const distLabel = dist != null ? `${dist} km` : 'Not set';
+        const distClass = dist != null ? '' : ' not-set';
+        const shiftCls = ['A', 'B', 'C'].includes(shift) ? ` shift-${shift}` : '';
+
+        return `
+          <tr id="haul-row-${id}">
+            <td class="td-num">${date}</td>
+            <td><span class="shift-badge shift-${shift}">${shift}</span></td>
+            <td style="font-family:var(--font-mono);font-size:12px;">${machine}</td>
+            <td>${location}</td>
+            <td>
+              <div class="haul-dist-cell">
+                <span class="haul-dist-val${distClass}" id="haul-val-${id}">${distLabel}</span>
+                <div class="haul-edit-wrap" id="haul-edit-wrap-${id}">
+                  <input type="number" class="haul-num-input" id="haul-input-${id}"
+                    step="0.1" min="0" placeholder="km"
+                    value="${dist != null ? dist : ''}" />
+                  <button class="haul-save-btn" id="haul-save-${id}"
+                    onclick="haulSave('${id}', ${idx})">
+                    Save
+                  </button>
+                  <button class="haul-cancel-btn" onclick="haulCancelEdit('${id}')">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </td>
+            <td>
+              <button class="haul-edit-btn" id="haul-editbtn-${id}"
+                onclick="haulStartEdit('${id}')">
+                ✏ Edit
+              </button>
+            </td>
+          </tr>`;
+      }).join('');
+
+      // Restore sort indicators
+      const sortSpanMap = {
+        mining_date: 'haul-sort-date',
+        shift: 'haul-sort-shift',
+        machine_id: 'haul-sort-machine',
+        location: 'haul-sort-location',
+        distance_km: 'haul-sort-dist'
+      };
+      const spanId = sortSpanMap[_haulSortField];
+      if (spanId) {
+        const el = document.getElementById(spanId);
+        if (el) el.textContent = _haulSortDir === 1 ? ' ↑' : ' ↓';
+      }
+    }
+
+    function haulStartEdit(id) {
+      // Collapse any other open edit
+      document.querySelectorAll('.haul-edit-wrap.active').forEach(el => {
+        const rowId = el.id.replace('haul-edit-wrap-', '');
+        if (rowId !== id) haulCancelEdit(rowId);
+      });
+      document.getElementById(`haul-val-${id}`).style.display = 'none';
+      document.getElementById(`haul-editbtn-${id}`).style.display = 'none';
+      const wrap = document.getElementById(`haul-edit-wrap-${id}`);
+      wrap.classList.add('active');
+      document.getElementById(`haul-input-${id}`).focus();
+    }
+
+    function haulCancelEdit(id) {
+      document.getElementById(`haul-val-${id}`).style.display = '';
+      document.getElementById(`haul-editbtn-${id}`).style.display = '';
+      document.getElementById(`haul-edit-wrap-${id}`).classList.remove('active');
+    }
+
+    async function haulSave(id, idx) {
+      const input = document.getElementById(`haul-input-${id}`);
+      const saveBtn = document.getElementById(`haul-save-${id}`);
+      const rawVal = input.value.trim();
+      if (rawVal === '' || isNaN(parseFloat(rawVal)) || parseFloat(rawVal) < 0) {
+        showToast('Enter a valid distance (≥ 0)');
+        return;
+      }
+      const distKm = parseFloat(rawVal);
+      saveBtn.disabled = true;
+      saveBtn.textContent = '…';
+      try {
+        const res = await fetch(`${API}/machine-shift-assignments/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ distance_km: distKm })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // Update in-memory data
+        const record = _haulAll.find(a => a._id === id);
+        if (record) record.distance_km = distKm;
+        const fRecord = _haulFiltered[idx];
+        if (fRecord) fRecord.distance_km = distKm;
+        // Update DOM in-place
+        const valEl = document.getElementById(`haul-val-${id}`);
+        valEl.textContent = `${distKm} km`;
+        valEl.classList.remove('not-set');
+        haulCancelEdit(id);
+        haulUpdateKpis();
+        showToast(`✔ Distance updated to ${distKm} km`);
+      } catch (e) {
+        showToast(`❌ Save failed: ${e.message}`);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+      }
+    }
+    // ─── END HAUL DISTANCE MANAGER ────────────────────────────────────────────
+
   </script>
 </body>
 
